@@ -193,6 +193,11 @@ contract("VotingContract", (accounts) => {
         );
     })
 
-    // it("Does NOT replace admin if newAdmin address is invalid");
+    it("Does NOT replace admin if newAdmin address is invalid", async () => {
+        await expectRevert(
+            vc.updateAdmin(address0).send({from: account1}),
+            "A valid address must be passed"
+        );
+    })
     
 })

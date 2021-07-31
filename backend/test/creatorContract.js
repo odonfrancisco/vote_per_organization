@@ -35,13 +35,21 @@ contract("CreatorContract", (accounts) => {
     })
 
     it("Updates contract admin successfully", async () => {
+        const originalAdminContractRefsLengthBefore = (await cc.getContractRefs(account1)).length;
         const newAdminContract = await cc.updateContractAdmin(account2, account1, contractAddr, {from: account1});
         const newAdminContractIndex = newAdminContract.receipt.logs[0].args[1].words[0];
+        const originalAdminContractRefsLengthAfter = (await cc.getContractRefs(account1)).length;
 
-        assert((await cc.contractMap(account1, contractIndex))._address === address0, 
-            "Original admin contract ID not deleted correctly");
-        assert((await cc.contractMap(account1, contractIndex)).name === "",
-            "Original admin contract Name not deleted correctly");
+        assert(originalAdminContractRefsLengthBefore 
+            != originalAdminContractRefsLengthAfter,
+            "Original admin contractRef not deleted correctly");
+        assert(originalAdminContractRefsLengthBefore ==
+            originalAdminContractRefsLengthAfter + 1,
+            "Original admin contractRef not deleted correctly");
+            // assert((await cc.contractMap(account1, contractIndex))._address === address0, 
+        //     "Original admin contract ID not deleted correctly");
+        // assert((await cc.contractMap(account1, contractIndex)).name === "",
+        //     "Original admin contract Name not deleted correctly");
         assert((await cc.contractMap(account2, newAdminContractIndex))._address !== address0,
             "New admin contract ID not updated correctly");
         assert((await cc.contractMap(account2, newAdminContractIndex)).name === "First Organization",

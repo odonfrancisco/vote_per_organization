@@ -21,6 +21,10 @@ contract CreatorContract {
     // Map of user address and the contracts they've created
     mapping(address => ContractRef[]) public contractMap;
 
+    function getContractRefs(address _address) external view returns(ContractRef[] memory){
+        return contractMap[_address];
+    }
+
     function createContract(string calldata name) external stringLength(name) {
         // Creates new instance of voting contract
         VotingContract newVotingContract = new VotingContract(name, msg.sender, address(this));
@@ -36,6 +40,7 @@ contract CreatorContract {
     /* Want to remove a VotingContract. Not sure if possible. 
     I can delete the reference to it, but the SC would still exist
     in the EVM */
+    // Turns out I can use the selfdestruct method. will look into this.
 
     function updateContractAdmin(
         address newAdmin, 
@@ -68,10 +73,18 @@ contract CreatorContract {
                     contractRefs[contractIndex]._address,
                     contractRefs[contractIndex].name
                 );
-                /* Need to work on this. most likely want to replace
-                element with last element of array */ 
-                delete contractRefs[contractIndex];
+                /* Replaces current element with last element from array,
+                then deletes last element from array. Since it's just a list
+                of user's organizations, the array doesn't have to be ordered */ 
+                contractRefs[contractIndex] = contractRefs[contractRefs.length - 1];
+                contractRefs.pop();
                 
+                /* contractMap.push() doesn't work when this
+                function is called from VotingContract.sol;
+                It's weird but I do want to fix this eventually.
+                Web3 shouldn't be calling VotingContract & CreatorContract
+                separately. kindof defeats the purpose but i'm sticking
+                to what works for now. */
                 contractMap[newAdmin].push(contractRef);
                 emit ContractCreated(contractRef._address, 
                     contractMap[newAdmin].length -1

@@ -35,8 +35,11 @@ contract VotingContract {
     // stores whether voter has voted in a particular poll
     // mapping(voterAddress => mapping(pollId => bool))
     mapping(address => mapping(uint => bool)) hasVoted;
-    /* Stores CreatorContract to updated the reference to votingContract name
+    /* Stores CreatorContract to update the reference to votingContract name
     as well as admin rights if necessary */
+    /* Even though it doesn't fucking work :/ for some reason I get
+    an error when I call a function inside creatorContract from this 
+    smartContract which modifies the state in CreatorContract */ 
     CreatorContract public creatorContract;
     
 
@@ -148,8 +151,6 @@ contract VotingContract {
             // creatorContract.updateContractAdmin(newAdmin, msg.sender, address(this));
         }
     }
-
-
 
     modifier onlyAdmin() {
         require(msg.sender == admin, 
