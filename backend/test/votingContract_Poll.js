@@ -163,7 +163,6 @@ contract("VotingContract_Poll", (accounts) => {
                 .send({from: account1}),
             "Must pass a valid poll ID"
         );
-
     })
 
     it("Does NOT add OptionResult if yet to add option", async () => {
