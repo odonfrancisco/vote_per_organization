@@ -1,25 +1,35 @@
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.6;
 
 import "./CreatorContract.sol";
 
 contract VotingContract {
 
+    event PollCreated(
+        uint id,
+        string issue
+    );
+
+    event OptionAdded(
+        string opt
+    );
+
     // Admin can create multiple polls for their organization to vote on
+    /* I wanted to have a mapping of uint => OptionStruct
+    but could NOT get it to work so I'm working with a 
+    more rudimentary approached. While not as sophisticated,
+    it works and that's what makes me happy. This is my first
+    real capstone project so I can't try and get too fancy */ 
     struct Poll {
         uint id;
         // issue on which voters are deciding on
         string issue;
-        // num of voters yet to vote
-        uint votersLeft;
-        // num of casted ballots
-        uint numOfVoters;
-        // options to vote on decided by poll creator
+        address[] voters;
         string[] options;
-        // stores number of votes per option
-        mapping(string => uint) results;
-        // final result
-        string result;
-        // whether this poll is active or closed
+        uint[] results;
+        // If -1, no result has been determined.
+        // If other number, index of option won.
+        int result;
         bool decided;
     }
 
@@ -29,6 +39,8 @@ contract VotingContract {
 
     string public name;
     address public admin;
+    // uint numPolls;
+    // mapping(uint => Poll) public polls;
     Poll[] public polls;
     // array of approved addresses
     address[] public approved;
@@ -150,6 +162,47 @@ contract VotingContract {
             but I need to move on right now or else my head will fucking explode.  */ 
             // creatorContract.updateContractAdmin(newAdmin, msg.sender, address(this));
         }
+    }
+
+    function createPoll(string memory issue) external onlyAdmin() {
+        address[] memory _voters;
+        string[] memory _options;
+        uint[] memory _results;
+        uint pollIndex = polls.length;
+        polls.push(Poll(
+            pollIndex,
+            issue,
+            _voters,
+            _options,
+            _results,
+            // final result
+            0,
+            // Whether poll has been decided
+            false
+        ));
+
+        emit PollCreated(polls[pollIndex].id, polls[pollIndex].issue);
+    }
+
+    /* For some reason, I can only add one option at a time.
+    Tried doing a forloop to add each option from incoming array 
+    but that wouldn't work. */ 
+    /* ALSO tried adding options inside of createPoll() but 
+    for some reason that wouldn't work. Has to be a separate function
+    call and I still don't understand why. */
+    function addOption(uint pollId, string memory option) external {
+        Poll storage p = polls[pollId];
+        p.options.push(option);
+        emit OptionAdded(p.options[p.options.length - 1]);
+    }
+
+    function addOptionResult(uint pollId) external {
+        Poll storage p = polls[pollId];
+        p.results.push(0);
+    }
+
+    function getPolls() external view returns(Poll[] memory) {
+        return polls;
     }
 
     modifier onlyAdmin() {

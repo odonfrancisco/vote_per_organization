@@ -27,8 +27,6 @@ contract("VotingContract", (accounts) => {
         but it works for now ;) */ 
         const votingContract = new web3.eth.Contract(VotingContract.abi, contractAddr);
         vc = votingContract.methods;
-        // Sends eth to votingContract in order to 
-        await web3.eth.sendTransaction({from: account1, to: contractAddr, value: 500000000000});
     })
 
     it("Contract created successfully", async () => {
