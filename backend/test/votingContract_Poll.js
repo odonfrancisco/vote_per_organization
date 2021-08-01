@@ -175,7 +175,6 @@ contract("VotingContract_Poll", (accounts) => {
                 .send({from: account1}),
             "May not add an OptionResult until you add an option"
         );
-
     })
 
 
