@@ -164,24 +164,27 @@ contract VotingContract {
         }
     }
 
-    function createPoll(string memory issue) external onlyAdmin() {
-        address[] memory _voters;
-        string[] memory _options;
-        uint[] memory _results;
-        uint pollIndex = polls.length;
-        polls.push(Poll(
-            pollIndex,
-            issue,
-            _voters,
-            _options,
-            _results,
-            // final result
-            0,
-            // Whether poll has been decided
-            false
-        ));
+    function createPoll(string calldata issue) 
+        external 
+        onlyAdmin()
+        stringLength(issue) {
+            address[] memory _voters;
+            string[] memory _options;
+            uint[] memory _results;
+            uint pollIndex = polls.length;
+            polls.push(Poll(
+                pollIndex,
+                issue,
+                _voters,
+                _options,
+                _results,
+                // final result
+                0,
+                // Whether poll has been decided
+                false
+            ));
 
-        emit PollCreated(polls[pollIndex].id, polls[pollIndex].issue);
+            emit PollCreated(polls[pollIndex].id, polls[pollIndex].issue);
     }
 
     /* For some reason, I can only add one option at a time.
@@ -190,14 +193,29 @@ contract VotingContract {
     /* ALSO tried adding options inside of createPoll() but 
     for some reason that wouldn't work. Has to be a separate function
     call and I still don't understand why. */
-    function addOption(uint pollId, string memory option) external {
-        Poll storage p = polls[pollId];
-        p.options.push(option);
-        emit OptionAdded(p.options[p.options.length - 1]);
+    function addOption(uint pollId, string calldata option) 
+        external 
+        onlyAdmin()
+        stringLength(option) {
+            Poll storage p = polls[pollId];
+            p.options.push(option);
+            emit OptionAdded(p.options[p.options.length - 1]);
     }
 
-    function addOptionResult(uint pollId) external {
+    /* Similar issue with what's happening with addOption. couldn't
+    addOptionResult() inside addOption() so it has to be called separately
+    from frontend. The way things currently stand, I have to call three
+    separate functions to create a poll from the front end.
+    createPoll() to create the actual poll. addOption() to add each individual
+    option. & addOptionResult to correctly setup the results array inside
+    poll struct */
+    function addOptionResult(uint pollId) external onlyAdmin() {
+        require(pollId < polls.length, "Must pass a valid poll ID");
         Poll storage p = polls[pollId];
+        /* Originally had p.options.length - 1 ... but that
+        caused an integer underflow so switched to p.results.length + 1 */ 
+        require(p.options.length == p.results.length + 1,
+            "May not add an OptionResult until you add an option");
         p.results.push(0);
     }
 
@@ -216,6 +234,13 @@ contract VotingContract {
             "A valid address must be passed");
         _;
     }
+
+    modifier stringLength(string calldata str) {
+        require(bytes(str).length > 0, 
+            "String parameter must be of a valid length");
+        _;
+    }
+
 
     
 }

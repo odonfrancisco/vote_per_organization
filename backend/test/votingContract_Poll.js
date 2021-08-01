@@ -102,4 +102,83 @@ contract("VotingContract_Poll", (accounts) => {
             "Poll2 decided not set to false");    
     })
 
+    it("Does NOT create poll if not admin", async () => {
+        const pollIssue = "First Poll";
+        await expectRevert(
+            vc.createPoll(pollIssue)
+                .send({from: account2}),
+            "Only admin may perform this action"
+        );
+    })
+
+    it("Does NOT create poll if invalid string passed", async () => {
+        await expectRevert(
+            vc.createPoll("")
+                .send({from: account1}),
+            "String parameter must be of a valid length"
+        );
+
+    })
+
+    it("Does NOT add options or optionResults if not admin", async () => {
+        const pollIssue = "First Poll";
+        const pollOptions = ["Henry", "Michael", "Trevor"];
+        const tx = await vc.createPoll(pollIssue)
+            .send({from: account1});
+        const pollId = tx.events.PollCreated.returnValues.id;
+        await expectRevert(
+            vc.addOption(pollId, pollOptions[0])
+                .send({from: account2}),
+            "Only admin may perform this action"
+        );
+        await expectRevert(
+            vc.addOptionResult(pollId)
+                .send({from: account2}),
+            "Only admin may perform this action"
+        );
+    })
+
+    it("Does NOT add option if empty string is passed", async () => {
+        const pollIssue = "First Poll";
+        const tx = await vc.createPoll(pollIssue)
+            .send({from: account1});
+        const pollId = tx.events.PollCreated.returnValues.id;
+        await expectRevert(
+            vc.addOption(pollId, "")
+                .send({from: account1}),
+            "String parameter must be of a valid length"
+        );
+    })
+
+    it("Does NOT add OptionResult if passing invalid pollId", async () => {
+        const pollIssue = "First Poll";
+        const pollOptions = ["Henry", "Michael", "Trevor"];
+        const tx = await vc.createPoll(pollIssue)
+            .send({from: account1});
+        const pollId = tx.events.PollCreated.returnValues.id;
+        vc.addOption(pollId, pollOptions[0])
+            .send({from: account1});
+        await expectRevert(
+            vc.addOptionResult(pollId + 1)
+                .send({from: account1}),
+            "Must pass a valid poll ID"
+        );
+
+    })
+
+    it("Does NOT add OptionResult if yet to add option", async () => {
+        const pollIssue = "First Poll";
+        const tx = await vc.createPoll(pollIssue)
+            .send({from: account1});
+        const pollId = tx.events.PollCreated.returnValues.id;
+        await expectRevert(
+            vc.addOptionResult(pollId)
+                .send({from: account1}),
+            "May not add an OptionResult until you add an option"
+        );
+
+    })
+
+
+
 })
