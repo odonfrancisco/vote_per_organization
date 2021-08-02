@@ -5,6 +5,10 @@ import "./CreatorContract.sol";
 
 contract VotingContract {
 
+    /* I figure having this event is good practice
+    but i'm not sure if there are more things I should 
+    include to make it a complete event or whatever.
+    Still just a young padawan. */
     event PollCreated(
         uint id,
         string issue
@@ -12,6 +16,17 @@ contract VotingContract {
 
     event OptionAdded(
         string opt
+    );
+
+    event VoteCasted(
+        uint pollId,
+        uint optionId,
+        address voter,
+        bool decided
+    );
+
+    event Debug(
+        string description
     );
 
     // Admin can create multiple polls for their organization to vote on
@@ -29,13 +44,9 @@ contract VotingContract {
         uint[] results;
         // If -1, no result has been determined.
         // If other number, index of option won.
-        int result;
+        uint result;
         bool decided;
     }
-
-    event Debug(
-        string description
-    );
 
     string public name;
     address public admin;
@@ -43,6 +54,7 @@ contract VotingContract {
     // mapping(uint => Poll) public polls;
     Poll[] public polls;
     // array of approved addresses
+    // Not sure if to keep this public. Don't think i'll need it
     address[] public approved;
     // stores whether voter has voted in a particular poll
     // mapping(voterAddress => mapping(pollId => bool))
@@ -65,7 +77,9 @@ contract VotingContract {
         approved.push(admin);
     }
 
-    receive() external payable {}
+    function getPolls() external view returns(Poll[] memory) {
+        return polls;
+    }
 
     function getApproved() external view returns(address[] memory) {
         return approved;
@@ -219,8 +233,72 @@ contract VotingContract {
         p.results.push(0);
     }
 
-    function getPolls() external view returns(Poll[] memory) {
-        return polls;
+    function vote(uint pollId, uint optionId) external onlyApproved() {
+        require(pollId < polls.length, 
+            "Must pass a valid poll ID");
+        Poll storage p = polls[pollId];
+
+        require(optionId < p.options.length, 
+            "Must pass a valid option ID");
+        require(!p.decided, 
+            "Cannot cast vote on an already decided poll");
+        require(!hasVoted[msg.sender][pollId], 
+            "Cannot vote on same poll twice");
+
+
+        p.voters.push(msg.sender);
+        p.results[optionId]++;
+        hasVoted[msg.sender][pollId] = true;
+
+        decideResult(pollId);
+        
+        emit VoteCasted(pollId, optionId, msg.sender, decideResult(pollId));
+    }
+
+    /* Should I require that a valid Poll ID is passed? 
+    Would be redundant since vote() (the function that calls this)
+    already checks for a valid pollId  */
+    function decideResult(uint pollId) internal returns(bool) {
+        Poll storage p = polls[pollId];
+        // Not sure if i should use a require, or the IF statement as I currently am
+        // require(!p.decided, "This poll has already been decided");
+        if(p.decided) {
+            return p.decided;
+        }
+
+        /* Not sure if i want this. What if admin wants to decide a vote before
+        all approved vote? What if admin wants poll to be open
+        only during a particular time period? */
+        // require(p.voters.length == approved.length, "All approved addresses must vote");
+        if(p.voters.length != approved.length) {
+            // Return p.decided since it should be false;
+            return p.decided;
+        }
+
+        uint mostVotes;
+        uint winnerIndex;
+        for(uint i = 0; i < p.results.length; i++){
+            /* "should" always work since this function won't be called
+            until someone casts a vote. will consider adding a check */ 
+            if(p.results[i] > mostVotes) {
+                winnerIndex = i;
+            }
+        }
+        p.result = winnerIndex;
+        p.decided = true;
+
+        return p.decided;
+    }
+
+    modifier onlyApproved() {
+        bool isApproved = false;
+        for(uint i=0; i < approved.length; i++){
+            if(approved[i] == msg.sender){
+                isApproved = true;
+            }
+        }
+        require(isApproved, "Only approved addresses may perform this action");
+        _;
     }
 
     modifier onlyAdmin() {
@@ -239,8 +317,5 @@ contract VotingContract {
         require(bytes(str).length > 0, 
             "String parameter must be of a valid length");
         _;
-    }
-
-
-    
+    }    
 }
