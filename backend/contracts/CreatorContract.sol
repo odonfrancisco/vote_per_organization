@@ -48,20 +48,18 @@ contract CreatorContract {
         address oldAdmin, 
         address contractAddr) 
         external
-        onlyAdmin(oldAdmin, contractAddr) {
+        onlyAdmin(oldAdmin, contractAddr)
+        returns(uint) {
             // reference to admin's array of contractRefs
             ContractRef[] storage contractRefs = contractMap[oldAdmin];
-            // Store particular ContractRef if found
+            // Store particular ContractRef-index if found
             uint contractIndex;
             bool foundContract = false;
 
             for(uint i = 0; i < contractRefs.length; i++){
                 ContractRef memory current = contractRefs[i];
                 if(current._address == contractAddr){
-                    // stores particular ContractRef to local var
-                    // contractRef = current;
                     contractIndex = i;
-                    // delete contractRefs[i];
                     foundContract = true;
                     break;
                 }
@@ -80,18 +78,13 @@ contract CreatorContract {
                 contractRefs[contractIndex] = contractRefs[contractRefs.length - 1];
                 contractRefs.pop();
                 
-                /* contractMap.push() doesn't work when this
-                function is called from VotingContract.sol;
-                It's weird but I do want to fix this eventually.
-                Web3 shouldn't be calling VotingContract & CreatorContract
-                separately. kindof defeats the purpose but i'm sticking
-                to what works for now. */
-                contractMap[newAdmin].push(contractRef);
+                ContractRef[] storage newAdminContracts = contractMap[newAdmin];
+                newAdminContracts.push(contractRef);
                 emit ContractCreated(contractRef._address, 
-                    contractMap[newAdmin].length -1
+                    newAdminContracts.length -1
                 );
             }
-        
+            return contractMap[newAdmin].length - 1;
     }
 
     function addContract(address _address, ContractRef memory ref) internal {
@@ -130,7 +123,6 @@ contract CreatorContract {
     }
 
     modifier stringLength(string calldata str) {
-        // emit Debug(bytes(str).length, str);
         require(bytes(str).length > 0, "String parameter must be of a valid length");
         _;
     }
