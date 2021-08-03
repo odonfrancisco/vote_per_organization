@@ -49,7 +49,6 @@ contract VotingContract {
         // If -1, no result has been determined.
         // If other number, index of option won.
         int result;
-        bool decided;
     }
 
     string public name;
@@ -206,7 +205,7 @@ contract VotingContract {
 
         require(optionId < p.options.length, 
             "Must pass a valid option ID");
-        require(!p.decided, 
+        require(p.result == -1, 
             "Cannot cast vote on an already decided poll");
         require(!hasVoted[msg.sender][pollId], 
             "Cannot vote on same poll twice");
@@ -215,8 +214,6 @@ contract VotingContract {
         p.voters.push(msg.sender);
         p.results[optionId]++;
         hasVoted[msg.sender][pollId] = true;
-
-        decideResult(pollId);
         
         emit VoteCasted(pollId, optionId, msg.sender, decideResult(pollId));
     }
@@ -224,12 +221,13 @@ contract VotingContract {
     /* Should I require that a valid Poll ID is passed? 
     Would be redundant since vote() (the function that calls this)
     already checks for a valid pollId  */
+    // Need to handle draws.
     function decideResult(uint pollId) internal returns(bool) {
         Poll storage p = polls[pollId];
         // Not sure if i should use a require, or the IF statement as I currently am
         // require(!p.decided, "This poll has already been decided");
-        if(p.decided) {
-            return p.decided;
+        if(p.result != -1) {
+            return false;
         }
 
         /* Not sure if i want this. What if admin wants to decide a vote before
@@ -237,8 +235,7 @@ contract VotingContract {
         only during a particular time period? */
         // require(p.voters.length == approved.length, "All approved addresses must vote");
         if(p.voters.length != approved.length) {
-            // Return p.decided since it should be false;
-            return p.decided;
+            return false;
         }
 
         uint mostVotes;
@@ -251,9 +248,8 @@ contract VotingContract {
             }
         }
         p.result = int(winnerIndex);
-        p.decided = true;
 
-        return p.decided;
+        return true;
     }
 
     modifier onlyApproved() {
@@ -263,7 +259,8 @@ contract VotingContract {
                 isApproved = true;
             }
         }
-        require(isApproved, "Only approved addresses may perform this action");
+        require(isApproved, 
+            "Only approved addresses may perform this action");
         _;
     }
 

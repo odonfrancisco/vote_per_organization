@@ -22,7 +22,7 @@ contract("VotingContract_Poll", (accounts) => {
         contractAddr = newContract.receipt.logs[0].args[0];
         // Fetches creates VotingContract
         vc = await VotingContract.at(contractAddr);
-        await vc.approveVoters([account2, account3]);
+        await vc.approveVoters([account2]);
     })
 
     it("Successfully creates polls", async () => {
@@ -50,8 +50,8 @@ contract("VotingContract_Poll", (accounts) => {
             "Poll1 options[2] not saved correctly");        
         assert(newPoll.results.length.toString() === pollOptions.length.toString(),
             "Poll1 results array not saved correctly");
-        assert(newPoll.decided === false,
-            "Poll1 decided not set to false");
+        assert(newPoll.result.toString() === '-1',
+            "Poll1 result not set to -1");
 
         assert(newPoll2.issue === pollIssue2,
             "Poll2 issue not saved correctly");
@@ -65,8 +65,8 @@ contract("VotingContract_Poll", (accounts) => {
             "Poll2 options[2] not saved correctly");        
         assert(newPoll2.results.length.toString() === pollOptions2.length.toString(),
             "Poll2 results array not saved correctly");
-        assert(newPoll2.decided === false,
-            "Poll2 decided not set to false");    
+        assert(newPoll2.result.toString() === '-1',
+            "Poll2 result not set to -1");    
     })
 
     it("Does NOT create poll if not admin", async () => {
@@ -99,10 +99,77 @@ contract("VotingContract_Poll", (accounts) => {
         const tx = await vc.createPoll(pollIssue, pollOptions, {from: account1})
         const pollId = tx.receipt.logs[0].args[0];
 
-        const voteTx = await vc.vote(pollId, 2, {from: account1});
+        await vc.vote(pollId, pollOptions.length - 1, {from: account1});
         const newPoll = (await vc.getPoll(pollId))[0];
         
         assert(newPoll.result.toString() === '-1', 
             "Decided() was prematurely called");
+    })
+
+    it("Does NOT vote if not an approved voter" , async () => {
+        const pollIssue = "First Poll";
+        const pollOptions = ["Henry", "Michael", "Trevor"];
+        const tx = await vc.createPoll(pollIssue, pollOptions, {from: account1})
+        const pollId = tx.receipt.logs[0].args[0];
+
+        await expectRevert(
+            vc.vote(pollId, pollOptions.length - 2, {from: account3}),
+            "Only approved addresses may perform this action"
+        );
+    })
+
+    it("Does NOT vote if invalid pollId is passed", async () => {
+        const pollIssue = "First Poll";
+        const pollOptions = ["Henry", "Michael", "Trevor"];
+        const tx = await vc.createPoll(pollIssue, pollOptions, {from: account1})
+        const pollId = tx.receipt.logs[0].args[0];
+
+        await expectRevert(
+            vc.vote(pollId + 1, pollOptions.length - 1, {from: account2}),
+            "Must pass a valid poll ID"
+        );
+    })
+
+    it("Does NOT vote if invalid optionId is passed", async () => {
+        const pollIssue = "First Poll";
+        const pollOptions = ["Henry", "Michael", "Trevor"];
+        const tx = await vc.createPoll(pollIssue, pollOptions, {from: account1})
+        const pollId = tx.receipt.logs[0].args[0];
+
+        await expectRevert(
+            vc.vote(pollId, pollOptions.length, {from: account2}),
+            "Must pass a valid option ID"
+        );
+    })
+
+    it("Does NOT vote on an already decided poll", async () => {
+        const pollIssue = "First Poll";
+        const pollOptions = ["Henry", "Michael", "Trevor"];
+        await vc.approveVoters([account3], {from: account1});
+        const tx = await vc.createPoll(pollIssue, pollOptions, {from: account1})
+        const pollId = tx.receipt.logs[0].args[0];
+
+        await vc.vote(pollId, pollOptions.length - 3, {from: account1});
+        await vc.vote(pollId, pollOptions.length - 3, {from: account2});
+        await vc.vote(pollId, pollOptions.length - 3, {from: account3});
+
+        await expectRevert(
+            vc.vote(pollId, pollOptions.length - 3, {from: account1}),
+            "Cannot cast vote on an already decided poll"
+        );
+    })
+
+    it("Does NOT let account vote on same poll twice", async () => {
+        const pollIssue = "First Poll";
+        const pollOptions = ["Henry", "Michael", "Trevor"];
+        const tx = await vc.createPoll(pollIssue, pollOptions, {from: account1})
+        const pollId = tx.receipt.logs[0].args[0];
+
+        await vc.vote(pollId, pollOptions.length - 3, {from: account2});
+
+        await expectRevert(
+            vc.vote(pollId, pollOptions.length - 3, {from: account2}),
+            "Cannot vote on same poll twice"
+        );
     })
 })
