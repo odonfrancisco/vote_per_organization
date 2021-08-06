@@ -1,28 +1,21 @@
-const CreatorContract = artifacts.require("./CreatorContract.sol");
 const VotingContract = artifacts.require("./VotingContract");
+const AccessToken = artifacts.require("AccessToken");
 const { expectRevert } = require('@openzeppelin/test-helpers');
 
 contract("VotingContract_Poll", (accounts) => {
     let vc;
-    let cc;
-    let contractAddr;
+    let accessToken;
     let account1;
     let account2;
     let account3;
     let address0 = "0x0000000000000000000000000000000000000000";
 
     beforeEach(async () => {
-        cc = await CreatorContract.deployed();
+        vc = await VotingContract.deployed();
+        accessToken = await AccessToken.deployed();
         account1 = accounts[0];
         account2 = accounts[1];
         account3 = accounts[2];
-        // Creates first VotingContract
-        const newContract = await cc.createContract("First Organization", {from: account1});
-        // Retrieves VotingContract address 
-        contractAddr = newContract.receipt.logs[0].args[0];
-        // Fetches creates VotingContract
-        vc = await VotingContract.at(contractAddr);
-        await vc.approveVoters([account2]);
     })
 
     it("Successfully creates polls", async () => {
@@ -98,6 +91,7 @@ contract("VotingContract_Poll", (accounts) => {
         const pollOptions = ["Henry", "Michael", "Trevor"];
         const tx = await vc.createPoll(pollIssue, pollOptions, {from: account1})
         const pollId = tx.receipt.logs[0].args[0];
+        await vc.generateAccessToken(account2, {from: account1});
 
         await vc.vote(pollId, pollOptions.length - 1, {from: account1});
         const newPoll = (await vc.getPoll(pollId))[0];
@@ -114,7 +108,7 @@ contract("VotingContract_Poll", (accounts) => {
 
         await expectRevert(
             vc.vote(pollId, pollOptions.length - 2, {from: account3}),
-            "Only approved addresses may perform this action"
+            "Must hold an access token to perform this action"
         );
     })
 
@@ -145,7 +139,7 @@ contract("VotingContract_Poll", (accounts) => {
     it("Does NOT vote on an already decided poll", async () => {
         const pollIssue = "First Poll";
         const pollOptions = ["Henry", "Michael", "Trevor"];
-        await vc.approveVoters([account3], {from: account1});
+        await vc.generateAccessToken(account3, {from: account1});
         const tx = await vc.createPoll(pollIssue, pollOptions, {from: account1})
         const pollId = tx.receipt.logs[0].args[0];
 
@@ -172,4 +166,8 @@ contract("VotingContract_Poll", (accounts) => {
             "Cannot vote on same poll twice"
         );
     })
+
+    /* should include test which transfers one accessToken to a
+    different account, new account tries to vote and is unsuccessful
+    because that particular NFT alreadf voted on poll */
 })
