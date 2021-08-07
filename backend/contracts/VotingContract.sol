@@ -157,34 +157,72 @@ contract VotingContract {
     //     }
     // }
 
-    // /* This updates who is the current admin. there may only be 
-    // one admin per VotingContract */
-    // // Purposely requiring that newAdmin is an approvedAddress for safety
-    // function updateAdmin(address newAdmin) external onlyAdmin() validAddress(newAdmin) {
-    //     require(newAdmin != admin, "Cannot replace admin with same address");
+    /* This updates who is the current admin. there may only be 
+    one admin per VotingContract */
+    // Purposely requiring that newAdmin already holds an access token
+    function updateAdmin(address newAdmin) external onlyAdmin() validAddress(newAdmin) {
+        require(newAdmin != msg.sender, "Cannot replace admin with same address");
 
-    //     // address oldAdmin = admin;
-    //     bool newAdminIsApproved = false;
+        // address oldAdmin = admin;
+        bool newAdminIsApproved = false;
 
-    //     // checks if newAdmin is already approved
-    //     for(uint i = 0; i < approved.length; i++){
-    //         if(newAdmin == approved[i]){
-    //             newAdminIsApproved = true;
-    //         }
-    //     }
+        // checks if newAdmin is already approved
+        uint balanceOf = accessToken.balanceOf(newAdmin);
+        uint tokenId;
+        for(uint i = 0; i < balanceOf; i++){
+            uint currentTokenId = accessToken.tokenOfOwnerByIndex(msg.sender, i);
+            if(approvedTokens[currentTokenId].owner == msg.sender){
+                tokenId = currentTokenId;
+                newAdminIsApproved = true;
+            }
+        }
 
-    //     require(newAdminIsApproved, 
-    //         "New admin must be an already approved voter");
+        uint newAdminBalanceOf = accessToken.balanceOf(newAdmin);
+        uint newAdminTokenId;
+        for(uint i = 0; i < newAdminBalanceOf; i++){
+            uint currentTokenId = accessToken.tokenOfOwnerByIndex(newAdmin, i);
+            if(approvedTokens[currentTokenId].owner == newAdmin){
+                newAdminTokenId = currentTokenId;
+            }
+        }
 
-    //     // newAdmin is added only if they are already an approved voter
-    //     // redundant check after the above require statement 
-    //     if(newAdminIsApproved){
-    //         /* should wait until creatorContract.updateContractAdmin() returns success
-    //         before assigning admin */
-    //         admin = newAdmin;
-    //         emit AdminUpdated(contractIndex);
-    //     }
-    // }
+
+        require(newAdminIsApproved, 
+            "New admin must have an access token");
+
+        // newAdmin is added only if they are already an approved voter
+        // redundant check after the above require statement 
+        if(newAdminIsApproved){
+            // Check accessToken.getApproved(newAdmin's current tokenId)
+            address approvedFor;
+
+            try approvedaccessToken.getApproved(newAdminTokenId) returns(address addr){
+                approvedFor = addr;
+            } catch Error(string memory err){}
+
+            require(approvedFor != address(0), 
+                "New admin must approve token transfer");
+
+            /* Before I start transfering tokens, I need to think through
+            the following: admin will transfer their token to newAdmin, but
+            newAdmin needs to have approved the transfer of their token to admin.
+            Not sure how exactly to work this out but I believe I will need an approve
+            function within this contract for newAdmin to approve transfer of 
+            their token before admin called updateAdmin. To keep it simple, I think
+            i will just have a settings tab where someone can come in and approve the 
+            transfer of their token to admin at any time. Would love to work something 
+            out in-app, but for now I will assume that admin & newAdmin came to an 
+            agreement offline, and newAdmin hits approveTransfer before admin assigns newAdmin */ 
+            /* I think admin might also have to approve their token transfer, since msg.sender 
+            inside of accessToken.call() will be this contract's address instead of admin... */
+            /* Wait a second I'm looking at ERC721 methods and _transfer imposes no restrictions on
+            msg.sender. this is good. since this is my first smart contract working with ERC721, I think
+            I will stick to _transfer and not worry about approvals for now. I will leave that for future 
+            sophistication. */
+
+            emit AdminUpdated(contractIndex);
+        }
+    }
 
     function createPoll(string calldata issue, string[] memory _options) 
         external 
@@ -275,11 +313,17 @@ contract VotingContract {
 
     modifier onlyAdmin() {
         uint balanceOf = accessToken.balanceOf(msg.sender);
-        require(balanceOf == 1,
-        "Only admin may perform this action");
-        uint ownerIndex = accessToken.tokenOfOwnerByIndex(msg.sender, 0);
-        require(approvedTokens[ownerIndex].isAdmin == true,
-        "Only admin may perform this action");
+        require(balanceOf > 0,
+            "Only admin may perform this action");
+        uint tokenId; 
+        for(uint i = 0; i < balanceOf; i++){
+            uint currentTokenId = accessToken.tokenOfOwnerByIndex(msg.sender, i);
+            if(approvedTokens[currentTokenId].owner == msg.sender){
+                tokenId = currentTokenId;
+            }
+        }
+        require(approvedTokens[tokenId].isAdmin == true,
+            "Only admin may perform this action");
         _;
     }
 
