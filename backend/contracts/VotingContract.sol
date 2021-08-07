@@ -27,9 +27,9 @@ contract VotingContract {
         bool decided
     );
 
-    event AdminUpdated(
-        uint contractIndex
-    );
+    // event AdminUpdated(
+    //     uint contractIndex
+    // );
 
     event Debug(
         string description
@@ -65,7 +65,6 @@ contract VotingContract {
     uint numTokens;
     mapping(uint => Poll) public polls;
     mapping(uint => AccessRef) public approvedTokens;
-    mapping(address => AccessRef) public tokenOwners;
     // stores whether token has voted in a particular poll
     // mapping(tokenId => mapping(pollId => bool))
     mapping(uint => mapping(uint => bool)) hasVoted;
@@ -79,10 +78,6 @@ contract VotingContract {
 
     function getAccessRef(uint tokenId) external view returns(AccessRef memory){
         return approvedTokens[tokenId];
-    }
-
-    function getOwnerToken() external view returns(AccessRef memory){
-        return tokenOwners[msg.sender];
     }
 
     function getPoll(uint pollId) external view returns(Poll[1] memory) {
@@ -103,7 +98,6 @@ contract VotingContract {
             true
         );
         approvedTokens[tokenId] = ar;
-        tokenOwners[msg.sender] = ar;    
         adminExists = true;
         numTokens++;
         emit TokenCreated(tokenId, msg.sender, accessToken.tokenURI(tokenId));
@@ -115,6 +109,8 @@ contract VotingContract {
         onlyAdmin()
         validAddress(approved) {
             uint balanceOf = accessToken.balanceOf(approved);
+            /* Need to fix this check. Will make it so that address may only
+            have one access token per voting contract*/
             require(balanceOf == 0, 
             "An address may only own one Access Token");
             uint tokenId = accessToken.mintToken(approved, contractAddr);
@@ -124,7 +120,6 @@ contract VotingContract {
                 false
             );
             approvedTokens[tokenId] = ar;
-            tokenOwners[approved] = ar;
             numTokens++;
             emit TokenCreated(tokenId, approved, accessToken.tokenURI(tokenId));
     }
@@ -163,64 +158,39 @@ contract VotingContract {
     function updateAdmin(address newAdmin) external onlyAdmin() validAddress(newAdmin) {
         require(newAdmin != msg.sender, "Cannot replace admin with same address");
 
-        // address oldAdmin = admin;
         bool newAdminIsApproved = false;
-
-        // checks if newAdmin is already approved
         uint balanceOf = accessToken.balanceOf(newAdmin);
+        // Saves newAdmin's current tokenId
         uint tokenId;
+        // checks if newAdmin has an access token
         for(uint i = 0; i < balanceOf; i++){
-            uint currentTokenId = accessToken.tokenOfOwnerByIndex(msg.sender, i);
-            if(approvedTokens[currentTokenId].owner == msg.sender){
+            uint currentTokenId = accessToken.tokenOfOwnerByIndex(newAdmin, i);
+            if(approvedTokens[currentTokenId].owner == newAdmin){
                 tokenId = currentTokenId;
                 newAdminIsApproved = true;
             }
         }
-
-        uint newAdminBalanceOf = accessToken.balanceOf(newAdmin);
-        uint newAdminTokenId;
-        for(uint i = 0; i < newAdminBalanceOf; i++){
-            uint currentTokenId = accessToken.tokenOfOwnerByIndex(newAdmin, i);
-            if(approvedTokens[currentTokenId].owner == newAdmin){
-                newAdminTokenId = currentTokenId;
-            }
-        }
-
-
         require(newAdminIsApproved, 
             "New admin must have an access token");
+
+        uint adminBalanceOf = accessToken.balanceOf(msg.sender);
+        // Saves current admin's tokenId
+        uint adminTokenId;
+        for(uint i = 0; i < adminBalanceOf; i++){
+            uint currentTokenId = accessToken.tokenOfOwnerByIndex(msg.sender, i);
+            if(approvedTokens[currentTokenId].owner == msg.sender){
+                adminTokenId = currentTokenId;
+            }
+        }
 
         // newAdmin is added only if they are already an approved voter
         // redundant check after the above require statement 
         if(newAdminIsApproved){
-            // Check accessToken.getApproved(newAdmin's current tokenId)
-            address approvedFor;
+            accessToken.transferToken(msg.sender, newAdmin, adminTokenId);
+            accessToken.transferToken(newAdmin, msg.sender, tokenId);
 
-            try approvedaccessToken.getApproved(newAdminTokenId) returns(address addr){
-                approvedFor = addr;
-            } catch Error(string memory err){}
-
-            require(approvedFor != address(0), 
-                "New admin must approve token transfer");
-
-            /* Before I start transfering tokens, I need to think through
-            the following: admin will transfer their token to newAdmin, but
-            newAdmin needs to have approved the transfer of their token to admin.
-            Not sure how exactly to work this out but I believe I will need an approve
-            function within this contract for newAdmin to approve transfer of 
-            their token before admin called updateAdmin. To keep it simple, I think
-            i will just have a settings tab where someone can come in and approve the 
-            transfer of their token to admin at any time. Would love to work something 
-            out in-app, but for now I will assume that admin & newAdmin came to an 
-            agreement offline, and newAdmin hits approveTransfer before admin assigns newAdmin */ 
-            /* I think admin might also have to approve their token transfer, since msg.sender 
-            inside of accessToken.call() will be this contract's address instead of admin... */
-            /* Wait a second I'm looking at ERC721 methods and _transfer imposes no restrictions on
-            msg.sender. this is good. since this is my first smart contract working with ERC721, I think
-            I will stick to _transfer and not worry about approvals for now. I will leave that for future 
-            sophistication. */
-
-            emit AdminUpdated(contractIndex);
+            approvedTokens[adminTokenId].owner = newAdmin;
+            approvedTokens[tokenId].owner = msg.sender;
         }
     }
 

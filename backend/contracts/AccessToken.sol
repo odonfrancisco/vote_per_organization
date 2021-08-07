@@ -19,4 +19,9 @@ contract AccessToken is ERC721URIStorage {
     _tokenIds.increment();  
     return(newTokenId);
   }
+
+  function transferToken(address from, address to, uint tokenId) external {
+    _transfer(from, to, tokenId);
+  }
+
 }

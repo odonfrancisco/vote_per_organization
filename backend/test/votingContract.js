@@ -21,18 +21,12 @@ contract("VotingContract", (accounts) => {
     it("should successfully create contract", async () => {
         const tokenId = 0;
         const accessRef = await vc.getAccessRef(tokenId);
-        const tokenOwnerRef = await vc.getOwnerToken({from: account1});
     
         assert(await vc.name() === "First Organization",
           "VC name not saved correctly");
         assert(await accessRef.isAdmin === true,
           "VC TokenRef.admin not saved correctly");
         assert(await accessRef.tokenId.toString() 
-          === tokenId.toString(),
-          "VC TokenRef.tokenId not saved correctly");
-        assert(await tokenOwnerRef.isAdmin === true,
-          "VC TokenRef.admin not saved correctly");
-        assert(await tokenOwnerRef.tokenId.toString() 
           === tokenId.toString(),
           "VC TokenRef.tokenId not saved correctly");
     })
@@ -52,16 +46,10 @@ contract("VotingContract", (accounts) => {
         const tokenOwner = tx.receipt.logs[0].args[1];
         const tokenURI = tx.receipt.logs[0].args[2];
         const accessRef = await vc.getAccessRef(tokenId);
-        const tokenOwnerRef = await vc.getOwnerToken({from: account2});
     
         assert(await accessRef.isAdmin === false,
           "VC TokenRef. admin not saved correctly");
         assert(await accessRef.tokenId.toString() 
-          === tokenId.toString(),
-          "VC TokenRef.tokenId not saved correctly");
-        assert(await tokenOwnerRef.isAdmin === false,
-          "VC TokenRef.admin not saved correctly");
-        assert(await tokenOwnerRef.tokenId.toString() 
           === tokenId.toString(),
           "VC TokenRef.tokenId not saved correctly");
         assert(tokenOwner === account2,
@@ -135,52 +123,70 @@ contract("VotingContract", (accounts) => {
     //     );
     // })
     
-    // it("Successfully replaces admin address", async () => {
-    //     const oldAdmin = await vc.admin();
-    //     await vc.approveVoters([account2], {from: account1});
+    it("Successfully replaces admin address", async () => {
+        const oldAdmin = account1;
+        const newAdmin = account2;
+        // Should uncomment if testing only this 'it'
+        // await vc.generateAccessToken(newAdmin, vc.address, {from: oldAdmin});
 
-    //     const tx = await vc.updateAdmin(account2, {from: account1});        
-    //     const newAdmin = await vc.admin();
-    //     const newAdminArrIndex = tx.receipt.logs[0].args[0];
-    //     const newAdminRef = await cc.contractMap(account2, newAdminArrIndex);
+        const balanceOfOldAdmin = (await accessToken.balanceOf(oldAdmin)).words[0];
+        // Token Id WITH admin access
+        let adminTokenId;
+        for(let i = 0; i < balanceOfOldAdmin; i++){
+          const currentTokenId = (await accessToken.tokenOfOwnerByIndex(oldAdmin, i)).words[0];
+          if(currentTokenId.toString() === (await vc.getAccessRef(currentTokenId)).tokenId.toString()){
+            adminTokenId = currentTokenId;
+          }
+        }
+        const balanceOfNewAdmin = (await accessToken.balanceOf(newAdmin)).words[0];
+        // Token ID WITHOUT admin access
+        let approvedTokenId;
+        for(let i = 0; i < balanceOfNewAdmin; i++){
+          const currentTokenId = (await accessToken.tokenOfOwnerByIndex(newAdmin, i)).words[0];
+          if(currentTokenId.toString() === (await vc.getAccessRef(currentTokenId)).tokenId.toString()){
+            approvedTokenId = currentTokenId;
+          }
+        }
+        await vc.updateAdmin(newAdmin, {from: account1});        
+        const adminTokenHolder = await accessToken.ownerOf(adminTokenId);
+        const accessTokenHolder = await accessToken.ownerOf(approvedTokenId);
 
-    //     assert(oldAdmin !== newAdmin, "New admin is still equal to old admin");
-    //     assert(oldAdmin === account1, "Old admin retrieved incorrectly");
-    //     assert(newAdmin === account2, "New admin saved incorrectly");
-    //     assert(newAdminRef._address === contractAddr, 
-    //         "Contract address not saved correctly for admin inside CreatorContract");
-    //     assert(newAdminRef.name === "First Organization", 
-    //         "Contract name not saved correctly for admin inside CreatorContract");
-    // })
+        assert(adminTokenHolder === newAdmin, 
+          "Admin token not transfered to New admin");
+        assert(accessTokenHolder === oldAdmin, 
+          "Old admin still has admin token")
+    })
     
-    // it("Does NOT replace admin if not called by admin", async () => {
-    //     await vc.approveVoters([account2], {from: account1});
-    //     await expectRevert(
-    //         vc.updateAdmin(account2, {from: account2}),
-    //         "Only admin may perform this action"
-    //     );
-    // })
+    it("Does NOT replace admin if not called by admin", async () => {
+        // In an earlier test, account2 became admin
+        await expectRevert(
+            vc.updateAdmin(account2, {from: account1}),
+            "Only admin may perform this action"
+        );
+    })
 
-    // it("Does NOT replace admin if using same address as admin", async () => {
-    //     await expectRevert(
-    //         vc.updateAdmin(account1, {from: account1}),
-    //         "Cannot replace admin with same address"
-    //     );
-    // })
+    it("Does NOT replace admin if using same address as admin", async () => {
+        // In an earlier test, account2 became admin
+        await expectRevert(
+            vc.updateAdmin(account2, {from: account2}),
+            "Cannot replace admin with same address"
+        );
+    })
 
-    // it("Does NOT replace admin if newAdmin is not already an approved user", async () => {
-    //     await vc.removeApprovedVoter(account2, {from: account1});
-    //     await expectRevert(
-    //         vc.updateAdmin(account2, {from: account1}),
-    //         "New admin must be an already approved voter"
-    //     );
-    // })
+    it("Does NOT replace admin if newAdmin is not already an approved user", async () => {
+        // In an earlier test, account2 became admin
+        await expectRevert(
+            vc.updateAdmin(account3, {from: account2}),
+            "New admin must have an access token"
+        );
+    })
 
-    // it("Does NOT replace admin if newAdmin address is invalid", async () => {
-    //     await expectRevert(
-    //         vc.updateAdmin(address0, {from: account1}),
-    //         "A valid address must be passed"
-    //     );
-    // })
+    it("Does NOT replace admin if newAdmin address is invalid", async () => {
+        // In an earlier test, account2 became admin
+        await expectRevert(
+            vc.updateAdmin(address0, {from: account2}),
+            "A valid address must be passed"
+        );
+    })
     
 })
