@@ -12,7 +12,7 @@ contract AccessToken is ERC721URIStorage {
   constructor() 
     ERC721("Access Token", "ACTK") {}
 
-  function mintToken(address approvedAddr, string memory vc) external returns(uint) {
+  function mintToken(address approvedAddr, string memory vc) external returns (uint) {
     uint newTokenId = _tokenIds.current();
     _mint(approvedAddr, newTokenId);
     _setTokenURI(newTokenId, vc);
@@ -22,6 +22,14 @@ contract AccessToken is ERC721URIStorage {
 
   function transferToken(address from, address to, uint tokenId) external {
     _transfer(from, to, tokenId);
+  }
+
+  function burn(uint tokenId) external {
+    _burn(tokenId);
+  }
+
+  function checkExists(uint tokenId) external view returns (bool) {
+    return _exists(tokenId);
   }
 
 }

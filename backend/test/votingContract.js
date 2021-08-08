@@ -82,52 +82,51 @@ contract("VotingContract", (accounts) => {
         )
     })
 
-    // it("Successfully removes an approved voter", async () => {
-    //     // Adds voter
-    //     await vc.approveVoters([account2, account3], {from: account1});
-    //     // Removes voter
-    //     await vc.removeApprovedVoter(account2, {from: account1});
-    //     const approved = await vc.getApproved();
-    //     let addressRemoved = true;
+    it("Successfully removes an approved voter", async () => {
+        const balanceOfAccount2 = (await accessToken.balanceOf(account2)).words[0];
+        let tokenId;
+        for(let i = 0; i < balanceOfAccount2; i++){
+          const currentTokenId = (await accessToken.tokenOfOwnerByIndex(account2, i)).words[0];
+          if(currentTokenId.toString() === (await vc.getAccessRef(currentTokenId)).tokenId.toString()){
+            tokenId = currentTokenId;
+          }
+        }
+        // Removes voter's access token
+        await vc.removeApprovedVoter(account2, {from: account1});
 
-    //     approved.forEach(e => {
-    //         if(e === account2){
-    //             addressRemoved = false;
-    //         }
-    //     })
+        const tokenExists = await accessToken.checkExists(tokenId);
+        const tokenRef = (await vc.getAccessRef(tokenId));
 
-    //     assert(addressRemoved, "Address not removed from approved array");
-    //     assert(approved.length === 2, "Address not removed from approved array");        
-    // })
+        assert(!tokenExists, "Access token not burned correctly");
+        assert(tokenRef.owner !== account2, "Token Ref owner not deleted correctly");
+        assert(tokenRef.tokenId !== tokenId, "Token Ref tokenId not deleted correctly")
+    })
 
-    // it("Does NOT remove approved voter if invalid address is passed", async () => {   
-    //     await expectRevert(
-    //         vc.removeApprovedVoter(address0, {from: account1}),
-    //         "A valid address must be passed"
-    //     );
-    // })
+    it("Does NOT remove approved voter if invalid address is passed", async () => {   
+        await expectRevert(
+            vc.removeApprovedVoter(address0, {from: account1}),
+            "A valid address must be passed"
+        );
+    })
 
-    // it("Does NOT remove approved voter if not called by admin", async () => {
-    //     await expectRevert(
-    //         vc.removeApprovedVoter(account1, {from: account2}),
-    //         "Only admin may perform this action"
-    //     );
-    // })
+    it("Does NOT remove approved voter if not called by admin", async () => {
+        await expectRevert(
+            vc.removeApprovedVoter(account1, {from: account2}),
+            "Only admin may perform this action"
+        );
+    })
 
-    // it("Does NOT remove admin from approved voter list", async () => {
-    //     const approved = await vc.getApproved();
-    //     assert(approved[0] === account1, "Admin is incorrectly not an approved user");
-    //     await expectRevert(
-    //         vc.removeApprovedVoter(account1, {from: account1}),
-    //         "Admin may not be removed from approved list"
-    //     );
-    // })
+    it("Does NOT remove admin from approved voter list", async () => {
+        await expectRevert(
+            vc.removeApprovedVoter(account1, {from: account1}),
+            "Admin may not be removed from approved list"
+        );
+    })
     
     it("Successfully replaces admin address", async () => {
         const oldAdmin = account1;
         const newAdmin = account2;
-        // Should uncomment if testing only this 'it'
-        // await vc.generateAccessToken(newAdmin, vc.address, {from: oldAdmin});
+        await vc.generateAccessToken(newAdmin, vc.address, {from: oldAdmin});
 
         const balanceOfOldAdmin = (await accessToken.balanceOf(oldAdmin)).words[0];
         // Token Id WITH admin access

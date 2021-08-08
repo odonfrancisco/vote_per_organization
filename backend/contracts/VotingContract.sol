@@ -124,33 +124,27 @@ contract VotingContract {
             emit TokenCreated(tokenId, approved, accessToken.tokenURI(tokenId));
     }
 
-    // function removeApprovedVoter(address unapproved) external onlyAdmin() validAddress(unapproved) {                
-    //     require(unapproved != admin, "Admin may not be removed from approved list");
+    function removeApprovedVoter(address unapproved) external onlyAdmin() validAddress(unapproved) {                
+        require(unapproved != msg.sender, "Admin may not be removed from approved list");
         
-    //     uint unapprovedIndex;
-    //     bool foundIndex = false;
-        
-    //     for(uint i = 0; i < approved.length; i++){
-    //         if(approved[i] == unapproved){
-    //             unapprovedIndex = i;
-    //             foundIndex = true;
-    //             // stops forLoop if found index of unapproved
-    //             break;
-    //         }
-    //     }
+        uint balanceOf = accessToken.balanceOf(unapproved);
+        bool unapprovedHasToken;
+        // Saves unapproved's current tokenId
+        uint tokenId;
+        // checks if unapproved has an access token
+        for(uint i = 0; i < balanceOf; i++){
+            uint currentTokenId = accessToken.tokenOfOwnerByIndex(unapproved, i);
+            if(approvedTokens[currentTokenId].owner == unapproved){
+                tokenId = currentTokenId;
+                unapprovedHasToken = true;
+            }
+        }
 
-    //     if(foundIndex){
-    //         delete approved[unapprovedIndex];
-    //         // replaces deleted spot with last element of array
-    //         /* I questionn whether i need to explicitly delete
-    //         the unapprovedIndex element as i do above or if i 
-    //         can just skip straight to replacing it as i do below */
-    //         approved[unapprovedIndex] = approved[approved.length - 1];
-    //         /* then removes last element from array to ensure the replacer 
-    //         approved address doesn't show up twice in array */
-    //         approved.pop();
-    //     }
-    // }
+        require(unapprovedHasToken, "Cannot remove a non-existing token");
+
+        accessToken.burn(tokenId);
+        delete approvedTokens[tokenId];
+    }
 
     /* This updates who is the current admin. there may only be 
     one admin per VotingContract */
