@@ -27,10 +27,6 @@ contract VotingContract {
         bool decided
     );
 
-    // event AdminUpdated(
-    //     uint contractIndex
-    // );
-
     event Debug(
         string description
     );
@@ -41,6 +37,9 @@ contract VotingContract {
     more rudimentary approached. While not as sophisticated,
     it works and that's what makes me happy. This is my first
     real capstone project so I can't try and get too fancy */ 
+    /* ^ this was when i was testing with a web3 instance of 
+    votingContract. Now that I can test with an articfacts instance,
+    i might attempt this */
     struct Poll {
         uint id;
         // issue on which voters are deciding on
@@ -53,7 +52,7 @@ contract VotingContract {
         int result;
     }
 
-    struct AccessRef {
+    struct TokenRef {
         uint tokenId;
         address owner;
         bool isAdmin;
@@ -63,12 +62,13 @@ contract VotingContract {
     bool adminExists;
     uint numPolls;
     uint numTokens;
-    mapping(uint => Poll) public polls;
-    mapping(uint => AccessRef) public approvedTokens;
+    // Why this mapping instead of array?
+    mapping(uint => Poll) polls;
+    mapping(uint => TokenRef) approvedTokens;
     // stores whether token has voted in a particular poll
     // mapping(tokenId => mapping(pollId => bool))
     mapping(uint => mapping(uint => bool)) hasVoted;
-    AccessToken public accessToken;
+    AccessToken accessToken;
     
 
     constructor(string memory _name, address tokenAddr) {
@@ -76,23 +76,41 @@ contract VotingContract {
         accessToken = AccessToken(tokenAddr);
     }
 
-    function getAccessRef(uint tokenId) external view returns(AccessRef memory){
-        return approvedTokens[tokenId];
+    function getTokenRef(uint tokenId) external view returns(TokenRef memory){
+        TokenRef memory tokenRef = approvedTokens[tokenId];
+        require(tokenRef.owner != address(0), "Invalid TokenID");
+        return tokenRef;
     }
 
     function getPoll(uint pollId) external view returns(Poll[1] memory) {
-        /* Using this as a workaround to retrieve a particular, 
-        since Poll doesn't return arrays within struct when 
-        call mapping polls() function. Would like to know 
+        require(pollId < numPolls, "Invalid poll id");
+        /* Using this as a workaround to retrieve a particular poll. 
+        The retrieved Poll doesn't return arrays within it when I
+        call polls(). Would like to know 
         if there's a better way to accomplish this */
         Poll[1] memory pollArr = [polls[pollId]];
         return pollArr;
     }
 
+    function getTokenId(address owner) internal view returns(int) {
+        uint balanceOf = accessToken.balanceOf(owner);
+        int tokenId = -1;
+        for(uint i = 0; i < balanceOf; i++){
+            uint currentTokenId = accessToken.tokenOfOwnerByIndex(owner, i);
+            if(approvedTokens[currentTokenId].owner == owner){
+                tokenId = int(accessToken.tokenOfOwnerByIndex(owner, i));
+            }
+        }
+        return tokenId;
+    }
+
+    /* Would like the ability to generateAdmin within constructor but 
+    because i need the votingContract's address in string format (for the tokenURI), 
+    don't think it'll be possible */
     function generateAdmin(string memory contractAddr) external {
         require(!adminExists, "Admin already exists for this contract");
         uint tokenId = accessToken.mintToken(msg.sender, contractAddr);
-        AccessRef memory ar = AccessRef(
+        TokenRef memory ar = TokenRef(
             tokenId,
             msg.sender,
             true
@@ -108,13 +126,21 @@ contract VotingContract {
         external 
         onlyAdmin()
         validAddress(approved) {
+            bool hasToken; 
             uint balanceOf = accessToken.balanceOf(approved);
+            for(uint i = 0; i < balanceOf; i++){
+                uint currentTokenId = accessToken.tokenOfOwnerByIndex(approved, i);
+                if(approvedTokens[currentTokenId].owner == approved){
+                    hasToken = true;
+                }
+            }
+            
             /* Need to fix this check. Will make it so that address may only
             have one access token per voting contract*/
-            require(balanceOf == 0, 
-            "An address may only own one Access Token");
+            require(!hasToken, 
+                "An address may only own one Access Token");
             uint tokenId = accessToken.mintToken(approved, contractAddr);
-            AccessRef memory ar = AccessRef(
+            TokenRef memory ar = TokenRef(
                 tokenId,
                 approved,
                 false
@@ -127,23 +153,14 @@ contract VotingContract {
     function removeApprovedVoter(address unapproved) external onlyAdmin() validAddress(unapproved) {                
         require(unapproved != msg.sender, "Admin may not be removed from approved list");
         
-        uint balanceOf = accessToken.balanceOf(unapproved);
-        bool unapprovedHasToken;
-        // Saves unapproved's current tokenId
-        uint tokenId;
         // checks if unapproved has an access token
-        for(uint i = 0; i < balanceOf; i++){
-            uint currentTokenId = accessToken.tokenOfOwnerByIndex(unapproved, i);
-            if(approvedTokens[currentTokenId].owner == unapproved){
-                tokenId = currentTokenId;
-                unapprovedHasToken = true;
-            }
-        }
+        int tokenId = getTokenId(unapproved);
 
-        require(unapprovedHasToken, "Cannot remove a non-existing token");
+        require(tokenId > 0, "Cannot remove a non-existing token");
 
-        accessToken.burn(tokenId);
-        delete approvedTokens[tokenId];
+        accessToken.burn(uint(tokenId));
+        numTokens--;
+        delete approvedTokens[uint(tokenId)];
     }
 
     /* This updates who is the current admin. there may only be 
@@ -152,39 +169,24 @@ contract VotingContract {
     function updateAdmin(address newAdmin) external onlyAdmin() validAddress(newAdmin) {
         require(newAdmin != msg.sender, "Cannot replace admin with same address");
 
-        bool newAdminIsApproved = false;
-        uint balanceOf = accessToken.balanceOf(newAdmin);
         // Saves newAdmin's current tokenId
-        uint tokenId;
+        int tokenId = getTokenId(newAdmin);
         // checks if newAdmin has an access token
-        for(uint i = 0; i < balanceOf; i++){
-            uint currentTokenId = accessToken.tokenOfOwnerByIndex(newAdmin, i);
-            if(approvedTokens[currentTokenId].owner == newAdmin){
-                tokenId = currentTokenId;
-                newAdminIsApproved = true;
-            }
-        }
+        bool newAdminIsApproved = tokenId > 0;
         require(newAdminIsApproved, 
             "New admin must have an access token");
 
-        uint adminBalanceOf = accessToken.balanceOf(msg.sender);
         // Saves current admin's tokenId
-        uint adminTokenId;
-        for(uint i = 0; i < adminBalanceOf; i++){
-            uint currentTokenId = accessToken.tokenOfOwnerByIndex(msg.sender, i);
-            if(approvedTokens[currentTokenId].owner == msg.sender){
-                adminTokenId = currentTokenId;
-            }
-        }
+        int adminTokenId = getTokenId(msg.sender);
 
         // newAdmin is added only if they are already an approved voter
         // redundant check after the above require statement 
         if(newAdminIsApproved){
-            accessToken.transferToken(msg.sender, newAdmin, adminTokenId);
-            accessToken.transferToken(newAdmin, msg.sender, tokenId);
+            accessToken.transferToken(msg.sender, newAdmin, uint(adminTokenId));
+            accessToken.transferToken(newAdmin, msg.sender, uint(tokenId));
 
-            approvedTokens[adminTokenId].owner = newAdmin;
-            approvedTokens[tokenId].owner = msg.sender;
+            approvedTokens[uint(adminTokenId)].owner = newAdmin;
+            approvedTokens[uint(tokenId)].owner = msg.sender;
         }
     }
 
@@ -214,14 +216,7 @@ contract VotingContract {
         require(p.result == -1, 
             "Cannot cast vote on an already decided poll");
 
-        uint balanceOf = accessToken.balanceOf(msg.sender);
-        uint tokenId; 
-        for(uint i = 0; i < balanceOf; i++){
-            uint currentTokenId = accessToken.tokenOfOwnerByIndex(msg.sender, i);
-            if(approvedTokens[currentTokenId].owner == msg.sender){
-                tokenId = currentTokenId;
-            }
-        }
+        uint tokenId = uint(getTokenId(msg.sender)); 
         require(!hasVoted[tokenId][pollId], 
             "Cannot vote on same poll twice");
 
@@ -276,17 +271,10 @@ contract VotingContract {
     }
 
     modifier onlyAdmin() {
-        uint balanceOf = accessToken.balanceOf(msg.sender);
-        require(balanceOf > 0,
+        int tokenId = getTokenId(msg.sender);
+        require(tokenId >= 0, 
             "Only admin may perform this action");
-        uint tokenId; 
-        for(uint i = 0; i < balanceOf; i++){
-            uint currentTokenId = accessToken.tokenOfOwnerByIndex(msg.sender, i);
-            if(approvedTokens[currentTokenId].owner == msg.sender){
-                tokenId = currentTokenId;
-            }
-        }
-        require(approvedTokens[tokenId].isAdmin == true,
+        require(approvedTokens[uint(tokenId)].isAdmin == true,
             "Only admin may perform this action");
         _;
     }

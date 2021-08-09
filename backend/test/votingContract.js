@@ -20,13 +20,13 @@ contract("VotingContract", (accounts) => {
 
     it("should successfully create contract", async () => {
         const tokenId = 0;
-        const accessRef = await vc.getAccessRef(tokenId);
+        const tokenRef = await vc.getTokenRef(tokenId);
     
         assert(await vc.name() === "First Organization",
           "VC name not saved correctly");
-        assert(await accessRef.isAdmin === true,
+        assert(await tokenRef.isAdmin === true,
           "VC TokenRef.admin not saved correctly");
-        assert(await accessRef.tokenId.toString() 
+        assert(await tokenRef.tokenId.toString() 
           === tokenId.toString(),
           "VC TokenRef.tokenId not saved correctly");
     })
@@ -45,11 +45,11 @@ contract("VotingContract", (accounts) => {
         const tokenId = tx.receipt.logs[0].args[0].words[0];
         const tokenOwner = tx.receipt.logs[0].args[1];
         const tokenURI = tx.receipt.logs[0].args[2];
-        const accessRef = await vc.getAccessRef(tokenId);
+        const tokenRef = await vc.getTokenRef(tokenId);
     
-        assert(await accessRef.isAdmin === false,
+        assert(await tokenRef.isAdmin === false,
           "VC TokenRef. admin not saved correctly");
-        assert(await accessRef.tokenId.toString() 
+        assert(await tokenRef.tokenId.toString() 
           === tokenId.toString(),
           "VC TokenRef.tokenId not saved correctly");
         assert(tokenOwner === account2,
@@ -87,7 +87,7 @@ contract("VotingContract", (accounts) => {
         let tokenId;
         for(let i = 0; i < balanceOfAccount2; i++){
           const currentTokenId = (await accessToken.tokenOfOwnerByIndex(account2, i)).words[0];
-          if(currentTokenId.toString() === (await vc.getAccessRef(currentTokenId)).tokenId.toString()){
+          if(currentTokenId.toString() === (await vc.getTokenRef(currentTokenId)).tokenId.toString()){
             tokenId = currentTokenId;
           }
         }
@@ -95,11 +95,15 @@ contract("VotingContract", (accounts) => {
         await vc.removeApprovedVoter(account2, {from: account1});
 
         const tokenExists = await accessToken.checkExists(tokenId);
-        const tokenRef = (await vc.getAccessRef(tokenId));
-
         assert(!tokenExists, "Access token not burned correctly");
-        assert(tokenRef.owner !== account2, "Token Ref owner not deleted correctly");
-        assert(tokenRef.tokenId !== tokenId, "Token Ref tokenId not deleted correctly")
+
+        await expectRevert(
+          vc.getTokenRef(tokenId),
+          "Invalid TokenID"
+        )
+        
+        // assert(tokenRef.owner !== account2, "Token Ref owner not deleted correctly");
+        // assert(tokenRef.tokenId !== tokenId, "Token Ref tokenId not deleted correctly")
     })
 
     it("Does NOT remove approved voter if invalid address is passed", async () => {   
@@ -133,7 +137,7 @@ contract("VotingContract", (accounts) => {
         let adminTokenId;
         for(let i = 0; i < balanceOfOldAdmin; i++){
           const currentTokenId = (await accessToken.tokenOfOwnerByIndex(oldAdmin, i)).words[0];
-          if(currentTokenId.toString() === (await vc.getAccessRef(currentTokenId)).tokenId.toString()){
+          if(currentTokenId.toString() === (await vc.getTokenRef(currentTokenId)).tokenId.toString()){
             adminTokenId = currentTokenId;
           }
         }
@@ -142,7 +146,7 @@ contract("VotingContract", (accounts) => {
         let approvedTokenId;
         for(let i = 0; i < balanceOfNewAdmin; i++){
           const currentTokenId = (await accessToken.tokenOfOwnerByIndex(newAdmin, i)).words[0];
-          if(currentTokenId.toString() === (await vc.getAccessRef(currentTokenId)).tokenId.toString()){
+          if(currentTokenId.toString() === (await vc.getTokenRef(currentTokenId)).tokenId.toString()){
             approvedTokenId = currentTokenId;
           }
         }
