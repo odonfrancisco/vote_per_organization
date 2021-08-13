@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './css/App.css';
-import { getWeb3, requestAccounts, getSelectedAccount } from './utils/getWeb3';
+import { getWeb3, requestAccounts } from './utils/getWeb3';
 import { Switch, Route } from 'react-router-dom';
 
 function App() {
@@ -10,11 +10,11 @@ function App() {
   useEffect(() => {
     const init = async () => {
       const web3 = await getWeb3();
-      const currentAddress = await getSelectedAccount();
+      const acctArray = await web3.eth.getAccounts();
+      const currentAddress = acctArray[0];
 
       setWeb3(web3)
       setSelectedAddress(currentAddress)
-
       if(currentAddress){
         await connectEth();
       }
@@ -22,10 +22,8 @@ function App() {
     init();
   }, [])
 
-
   const connectEth = async () => {
     setSelectedAddress(await requestAccounts());
-
   }
 
   if(!web3) {
