@@ -3,22 +3,18 @@ import detectEthereumProvider from '@metamask/detect-provider';
 
 
 const getWeb3 = async () => {
-    // return new Promise(async (resolve, reject) => {
-        const provider = await detectEthereumProvider();
-        if(provider) {
-            try{
-                const web3 = new Web3(window.ethereum);
-                // resolve(web3);
-                return web3;
-            } catch(err) {
-                console.log(err);
-                return false;
-                // reject(err);
-            }
+    const provider = await detectEthereumProvider();
+    if(provider) {
+        try{
+            const web3 = new Web3(window.ethereum);
+            return web3;
+        } catch(err) {
+            // Don't think i'm properly error-handling here
+            console.error(err);
+            return false;
         }
-        return false;
-        // resolve(false);
-    // });
+    }
+    return false;
 }
 
 const requestAccounts = async () => {

@@ -62,8 +62,7 @@ contract VotingContract {
     bool adminExists;
     uint numPolls;
     uint numTokens;
-    // Why this mapping instead of array?
-    mapping(uint => Poll) polls;
+    Poll[] polls;
     mapping(uint => TokenRef) approvedTokens;
     // stores whether token has voted in a particular poll
     // mapping(tokenId => mapping(pollId => bool))
@@ -82,14 +81,13 @@ contract VotingContract {
         return tokenRef;
     }
 
-    function getPoll(uint pollId) external view returns(Poll[1] memory) {
+    function getPoll(uint pollId) external view returns(Poll memory) {
         require(pollId < numPolls, "Invalid poll id");
-        /* Using this as a workaround to retrieve a particular poll. 
-        The retrieved Poll doesn't return arrays within it when I
-        call polls(). Would like to know 
-        if there's a better way to accomplish this */
-        Poll[1] memory pollArr = [polls[pollId]];
-        return pollArr;
+        return polls[pollId];
+    }
+
+    function getPolls() external view onlyApproved() returns(Poll[] memory ) {
+        return polls;
     }
 
     function getTokenId(address owner) internal view returns(int) {
@@ -196,12 +194,14 @@ contract VotingContract {
         stringLength(issue) {
             require(_options.length > 0, 
                 "Options parameter must not be empty");
-            Poll storage p = polls[numPolls];
+            Poll memory p;
             p.id = numPolls;
             p.issue = issue;
             p.options = _options;
             p.result = -1;
             p.results = new uint[](_options.length);
+            
+            polls.push(p);
             
             emit PollCreated(p.id, p.issue);
             numPolls++;

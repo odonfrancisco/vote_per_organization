@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import './css/App.css';
 import { getWeb3, requestAccounts } from './utils/getWeb3';
-import { Switch, Route } from 'react-router-dom';
+import OrganizationDetails from './components/OrganizationDetails';
+import { Switch, Route, Redirect } from 'react-router-dom';
+import './css/App.css';
+
+import getAccessToken from './utils/getTokenContract';
 
 function App() {
   const [web3, setWeb3] = useState();
+  const [accessToken, setAccessToken] = useState();
   const [selectedAddress, setSelectedAddress] = useState();
+  const [redirect, setRedirect] = useState();
 
   useEffect(() => {
     const init = async () => {
@@ -16,14 +21,44 @@ function App() {
       setWeb3(web3)
       setSelectedAddress(currentAddress)
       if(currentAddress){
-        await connectEth();
+        await connectEth(web3, currentAddress);
       }
     }
     init();
   }, [])
 
-  const connectEth = async () => {
-    setSelectedAddress(await requestAccounts());
+  const connectEth = async (
+    web3Instance = web3, 
+    currentAddress = selectedAddress) => {
+      setSelectedAddress(await requestAccounts());
+      const accessToken = await getAccessToken(web3Instance);
+      setAccessToken(accessToken);
+      checkIfUserAccess(accessToken, currentAddress);
+  }
+
+  const checkIfUserAccess = async (
+    accessToken, 
+    currentAddress) => {
+      const balanceOfUser = await accessToken.methods.balanceOf(currentAddress).call();
+      const userTokenURIs = [];
+
+      for(let i = 0; i < balanceOfUser; i++){
+        const tokenId = await accessToken.methods.tokenOfOwnerByIndex(currentAddress, i).call();
+        const tokenURI = await accessToken.methods.tokenURI(tokenId).call();
+        userTokenURIs.push(tokenURI);
+      }
+      
+      // using == because accessToken.balanceOf returns a string
+      if(balanceOfUser == 1){
+        setRedirect(<Redirect to={{
+          pathname: `/organizations/${userTokenURIs[0]}`
+        }}/>);
+      } else if(balanceOfUser > 1){
+        // Should be passing array of TokenURI's? or call for them inside /organizations?
+        setRedirect(<Redirect to="/organizations"/>)
+      } else {
+        setRedirect(<Redirect to="/newOrganization"/>)
+      }
   }
 
   if(!web3) {
@@ -44,10 +79,21 @@ function App() {
       </div>
     )
   }
-  
+
   return (
     <div>
-      
+      {redirect}
+      <Switch>
+        <Route exact path="/newOrganization">
+          {/* newOrgComponent */}
+        </Route>
+        <Route exact path="/organizations">
+          {/* OrganizationListComponent */}
+        </Route>
+        <Route path="/organizations/:address">
+          <OrganizationDetails web3={web3}/>
+        </Route>
+      </Switch>
     </div>
   );
 }

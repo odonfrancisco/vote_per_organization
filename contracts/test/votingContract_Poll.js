@@ -10,27 +10,29 @@ contract("VotingContract_Poll", (accounts) => {
     let account3;
     let address0 = "0x0000000000000000000000000000000000000000";
 
-    beforeEach(async () => {
+    const pollIssue = "First Poll";
+    const pollIssue2 = "Second Poll";
+    const pollOptions = ["Henry", "Michael", "Trevor"];
+    const pollOptions2 = ["Forman", "Bubba", "Biggie"];
+    let pollId;
+    let pollId2;
+
+    before(async () => {
         vc = await VotingContract.deployed();
         accessToken = await AccessToken.deployed();
         account1 = accounts[0];
         account2 = accounts[1];
         account3 = accounts[2];
+        const tx = await vc.createPoll(pollIssue, pollOptions, {from: account1})
+        const tx2 = await vc.createPoll(pollIssue2, pollOptions2, {from: account1})
+        pollId = tx.receipt.logs[0].args[0];
+        pollId2 = tx2.receipt.logs[0].args[0];
     })
 
     it("Successfully creates polls", async () => {
-        const pollIssue = "First Poll";
-        const pollIssue2 = "Second Poll";
-        const pollOptions = ["Henry", "Michael", "Trevor"];
-        const pollOptions2 = ["Forman", "Bubba", "Biggie"];
-        const tx = await vc.createPoll(pollIssue, pollOptions, {from: account1})
-        const tx2 = await vc.createPoll(pollIssue2, pollOptions2, {from: account1})
-        const pollId = tx.receipt.logs[0].args[0];
-        const pollId2 = tx2.receipt.logs[0].args[0];
-
-        const newPoll = (await vc.getPoll(pollId))[0];
-        const newPoll2 = (await vc.getPoll(pollId2))[0];
-
+        const newPoll = await vc.getPoll(pollId);
+        const newPoll2 = await vc.getPoll(pollId2);
+        
         assert(newPoll.issue === pollIssue,
             "Poll1 issue not saved correctly");
         assert(newPoll.id.toString() === pollId.toString(),
@@ -78,12 +80,47 @@ contract("VotingContract_Poll", (accounts) => {
             "String parameter must be of a valid length"
         );
     })
+
     it("Does NOT create poll if invalid array passed", async () => {
         const pollIssue = "First Poll";
         await expectRevert(
             vc.createPoll(pollIssue, [], {from: account1}),
             "Options parameter must not be empty"
         );
+    })
+
+    it("Retrieves all polls", async () => {
+        const polls = await vc.getPolls();
+
+        assert(polls[0].issue === pollIssue,
+            "Poll1 issue not saved correctly");
+        assert(polls[0].id.toString() === pollId.toString(),
+            "Poll1 ID not saved correctly");
+        assert(polls[0].options[0] === pollOptions[0],
+            "Poll1 options[0] not saved correctly");        
+        assert(polls[0].options[1] === pollOptions[1],
+            "Poll1 options[1] not saved correctly");        
+        assert(polls[0].options[2] === pollOptions[2],
+            "Poll1 options[2] not saved correctly");        
+        assert(polls[0].results.length.toString() === pollOptions.length.toString(),
+            "Poll1 results array not saved correctly");
+        assert(polls[0].result.toString() === '-1',
+            "Poll1 result not set to -1");
+
+        assert(polls[1].issue === pollIssue2,
+            "Poll2 issue not saved correctly");
+        assert(polls[1].id.toString() === pollId2.toString(),
+            "Poll2 ID not saved correctly");
+        assert(polls[1].options[0] === pollOptions2[0],
+            "Poll2 options[0] not saved correctly");        
+        assert(polls[1].options[1] === pollOptions2[1],
+            "Poll2 options[1] not saved correctly");        
+        assert(polls[1].options[2] === pollOptions2[2],
+            "Poll2 options[2] not saved correctly");        
+        assert(polls[1].results.length.toString() === pollOptions2.length.toString(),
+            "Poll2 results array not saved correctly");
+        assert(polls[1].result.toString() === '-1',
+            "Poll2 result not set to -1");    
     })
 
     it("Votes correctly", async () => {
@@ -94,7 +131,7 @@ contract("VotingContract_Poll", (accounts) => {
         await vc.generateAccessToken(account2, {from: account1});
 
         await vc.vote(pollId, pollOptions.length - 1, {from: account1});
-        const newPoll = (await vc.getPoll(pollId))[0];
+        const newPoll = (await vc.getPoll(pollId));
         
         assert(newPoll.result.toString() === '-1', 
             "Decided() was prematurely called");
