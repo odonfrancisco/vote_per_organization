@@ -59,9 +59,8 @@ contract VotingContract {
     }
     
     string public name;
+    uint[] public tokenIds;
     bool adminExists;
-    uint numPolls;
-    uint numTokens;
     Poll[] polls;
     mapping(uint => TokenRef) approvedTokens;
     // stores whether token has voted in a particular poll
@@ -75,19 +74,19 @@ contract VotingContract {
         accessToken = AccessToken(tokenAddr);
     }
 
-    function getTokenRef(uint tokenId) external view returns(TokenRef memory){
-        TokenRef memory tokenRef = approvedTokens[tokenId];
-        require(tokenRef.owner != address(0), "Invalid TokenID");
-        return tokenRef;
-    }
-
     function getPoll(uint pollId) external view returns(Poll memory) {
-        require(pollId < numPolls, "Invalid poll id");
+        require(pollId < polls.length, "Invalid poll id");
         return polls[pollId];
     }
 
     function getPolls() external view onlyApproved() returns(Poll[] memory ) {
         return polls;
+    }
+
+    function getTokenRef(uint tokenId) external view returns(TokenRef memory){
+        TokenRef memory tokenRef = approvedTokens[tokenId];
+        require(tokenRef.owner != address(0), "Invalid TokenID");
+        return tokenRef;
     }
 
     function getTokenId(address owner) internal view returns(int) {
@@ -100,6 +99,10 @@ contract VotingContract {
             }
         }
         return tokenId;
+    }
+
+    function getTokenIds() external view returns(uint[] memory) {
+        return tokenIds;
     }
 
     /* Would like the ability to generateAdmin within constructor but 
@@ -115,7 +118,7 @@ contract VotingContract {
         );
         approvedTokens[tokenId] = ar;
         adminExists = true;
-        numTokens++;
+        tokenIds.push(tokenId);
         emit TokenCreated(tokenId, msg.sender, accessToken.tokenURI(tokenId));
     }
 
@@ -144,7 +147,7 @@ contract VotingContract {
                 false
             );
             approvedTokens[tokenId] = ar;
-            numTokens++;
+            tokenIds.push(tokenId);
             emit TokenCreated(tokenId, approved, accessToken.tokenURI(tokenId));
     }
 
@@ -157,7 +160,16 @@ contract VotingContract {
         require(tokenId > 0, "Cannot remove a non-existing token");
 
         accessToken.burn(uint(tokenId));
-        numTokens--;
+
+        uint tokenIndex;
+        for(uint i = 0; i < tokenIds.length; i++){
+            if(tokenIds[i] == uint(tokenId)){
+                tokenIndex = i;
+            }
+        }
+        tokenIds[tokenIndex] = tokenIds[tokenIds.length - 1];
+        tokenIds.pop();
+
         delete approvedTokens[uint(tokenId)];
     }
 
@@ -195,7 +207,7 @@ contract VotingContract {
             require(_options.length > 0, 
                 "Options parameter must not be empty");
             Poll memory p;
-            p.id = numPolls;
+            p.id = polls.length;
             p.issue = issue;
             p.options = _options;
             p.result = -1;
@@ -204,11 +216,10 @@ contract VotingContract {
             polls.push(p);
             
             emit PollCreated(p.id, p.issue);
-            numPolls++;
     }
 
     function vote(uint pollId, uint optionId) external onlyApproved() {
-        require(pollId < numPolls, 
+        require(pollId < polls.length, 
             "Must pass a valid poll ID");
         Poll storage p = polls[pollId];
         require(optionId < p.options.length, 
@@ -245,7 +256,7 @@ contract VotingContract {
         all approved vote? What if admin wants poll to be open
         only during a particular time period? */
         // require(p.voters.length == approved.length, "All approved addresses must vote");
-        if(p.voters.length != numTokens) {
+        if(p.voters.length != tokenIds.length) {
             return false;
         }
 

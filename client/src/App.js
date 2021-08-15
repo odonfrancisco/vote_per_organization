@@ -17,23 +17,23 @@ function App() {
       const web3 = await getWeb3();
       const acctArray = await web3.eth.getAccounts();
       const currentAddress = acctArray[0];
+      const accessToken = await getAccessToken(web3);
 
+      setAccessToken(accessToken);
       setWeb3(web3)
       setSelectedAddress(currentAddress)
       if(currentAddress){
-        await connectEth(web3, currentAddress);
+        await connectEth(currentAddress, accessToken);
       }
     }
     init();
   }, [])
 
   const connectEth = async (
-    web3Instance = web3, 
-    currentAddress = selectedAddress) => {
+    currentAddress,
+    accessTokenRef = accessToken) => {
       setSelectedAddress(await requestAccounts());
-      const accessToken = await getAccessToken(web3Instance);
-      setAccessToken(accessToken);
-      checkIfUserAccess(accessToken, currentAddress);
+      checkIfUserAccess(accessTokenRef, currentAddress || await requestAccounts());
   }
 
   const checkIfUserAccess = async (
@@ -91,7 +91,10 @@ function App() {
           {/* OrganizationListComponent */}
         </Route>
         <Route path="/organizations/:address">
-          <OrganizationDetails web3={web3}/>
+          <OrganizationDetails 
+            web3={web3}
+            accessToken={accessToken}
+          />
         </Route>
       </Switch>
     </div>

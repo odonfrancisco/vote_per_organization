@@ -65,8 +65,6 @@ contract("VotingContract_Poll", (accounts) => {
     })
 
     it("Does NOT create poll if not admin", async () => {
-        const pollIssue = "First Poll";
-        const pollOptions = ["Henry", "Michael", "Trevor"];
         await expectRevert(
             vc.createPoll(pollIssue, pollOptions, {from: account2}),
             "Only admin may perform this action"
@@ -74,7 +72,6 @@ contract("VotingContract_Poll", (accounts) => {
     })
 
     it("Does NOT create poll if invalid string passed", async () => {
-        const pollOptions = ["Henry", "Michael", "Trevor"];
         await expectRevert(
             vc.createPoll("", pollOptions, {from: account1}),
             "String parameter must be of a valid length"
@@ -82,7 +79,6 @@ contract("VotingContract_Poll", (accounts) => {
     })
 
     it("Does NOT create poll if invalid array passed", async () => {
-        const pollIssue = "First Poll";
         await expectRevert(
             vc.createPoll(pollIssue, [], {from: account1}),
             "Options parameter must not be empty"
@@ -124,10 +120,6 @@ contract("VotingContract_Poll", (accounts) => {
     })
 
     it("Votes correctly", async () => {
-        const pollIssue = "First Poll";
-        const pollOptions = ["Henry", "Michael", "Trevor"];
-        const tx = await vc.createPoll(pollIssue, pollOptions, {from: account1})
-        const pollId = tx.receipt.logs[0].args[0];
         await vc.generateAccessToken(account2, {from: account1});
 
         await vc.vote(pollId, pollOptions.length - 1, {from: account1});
@@ -138,11 +130,6 @@ contract("VotingContract_Poll", (accounts) => {
     })
 
     it("Does NOT vote if not an approved voter" , async () => {
-        const pollIssue = "First Poll";
-        const pollOptions = ["Henry", "Michael", "Trevor"];
-        const tx = await vc.createPoll(pollIssue, pollOptions, {from: account1})
-        const pollId = tx.receipt.logs[0].args[0];
-
         await expectRevert(
             vc.vote(pollId, pollOptions.length - 2, {from: account3}),
             "Must hold an access token to perform this action"
@@ -150,23 +137,13 @@ contract("VotingContract_Poll", (accounts) => {
     })
 
     it("Does NOT vote if invalid pollId is passed", async () => {
-        const pollIssue = "First Poll";
-        const pollOptions = ["Henry", "Michael", "Trevor"];
-        const tx = await vc.createPoll(pollIssue, pollOptions, {from: account1})
-        const pollId = tx.receipt.logs[0].args[0];
-
         await expectRevert(
-            vc.vote(pollId + 1, pollOptions.length - 1, {from: account2}),
+            vc.vote(999, pollOptions.length - 1, {from: account2}),
             "Must pass a valid poll ID"
         );
     })
 
     it("Does NOT vote if invalid optionId is passed", async () => {
-        const pollIssue = "First Poll";
-        const pollOptions = ["Henry", "Michael", "Trevor"];
-        const tx = await vc.createPoll(pollIssue, pollOptions, {from: account1})
-        const pollId = tx.receipt.logs[0].args[0];
-
         await expectRevert(
             vc.vote(pollId, pollOptions.length, {from: account2}),
             "Must pass a valid option ID"
@@ -174,8 +151,6 @@ contract("VotingContract_Poll", (accounts) => {
     })
 
     it("Does NOT vote on an already decided poll", async () => {
-        const pollIssue = "First Poll";
-        const pollOptions = ["Henry", "Michael", "Trevor"];
         await vc.generateAccessToken(account3, {from: account1});
         const tx = await vc.createPoll(pollIssue, pollOptions, {from: account1})
         const pollId = tx.receipt.logs[0].args[0];
@@ -191,11 +166,6 @@ contract("VotingContract_Poll", (accounts) => {
     })
 
     it("Does NOT let account vote on same poll twice", async () => {
-        const pollIssue = "First Poll";
-        const pollOptions = ["Henry", "Michael", "Trevor"];
-        const tx = await vc.createPoll(pollIssue, pollOptions, {from: account1})
-        const pollId = tx.receipt.logs[0].args[0];
-
         await vc.vote(pollId, pollOptions.length - 3, {from: account2});
 
         await expectRevert(

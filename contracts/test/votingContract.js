@@ -40,13 +40,15 @@ contract("VotingContract", (accounts) => {
     });
 
     it("should generate access token correctly", async () => {
+        const numTokens = (await vc.getTokenIds()).length;
         const tx = await vc.generateAccessToken(
           account2, vc.address, {from: account1});
         const tokenId = tx.receipt.logs[0].args[0].words[0];
         const tokenOwner = tx.receipt.logs[0].args[1];
         const tokenURI = tx.receipt.logs[0].args[2];
         const tokenRef = await vc.getTokenRef(tokenId);
-    
+        const numTokensAfter = (await vc.getTokenIds()).length;
+
         assert(await tokenRef.isAdmin === false,
           "VC TokenRef. admin not saved correctly");
         assert(await tokenRef.tokenId.toString() 
@@ -56,6 +58,8 @@ contract("VotingContract", (accounts) => {
           "Token owner not saved correctly");
         assert(tokenURI === vc.address,
           "TokenURI not saved correctly");        
+        assert(numTokens === numTokensAfter - 1,
+          "TokenIds array not saved correctly")
     });
     
     
@@ -83,6 +87,7 @@ contract("VotingContract", (accounts) => {
     })
 
     it("Successfully removes an approved voter", async () => {
+        const numTokens = (await vc.getTokenIds()).length;
         const balanceOfAccount2 = (await accessToken.balanceOf(account2)).words[0];
         let tokenId;
         for(let i = 0; i < balanceOfAccount2; i++){
@@ -94,6 +99,7 @@ contract("VotingContract", (accounts) => {
         // Removes voter's access token
         await vc.removeApprovedVoter(account2, {from: account1});
 
+        const numTokensAfter = (await vc.getTokenIds()).length;
         const tokenExists = await accessToken.checkExists(tokenId);
         assert(!tokenExists, "Access token not burned correctly");
 
@@ -101,6 +107,9 @@ contract("VotingContract", (accounts) => {
           vc.getTokenRef(tokenId),
           "Invalid TokenID"
         )
+
+        assert(numTokensAfter == numTokens - 1,
+          "TokenIds array not saved correctly");
         
         // assert(tokenRef.owner !== account2, "Token Ref owner not deleted correctly");
         // assert(tokenRef.tokenId !== tokenId, "Token Ref tokenId not deleted correctly")
