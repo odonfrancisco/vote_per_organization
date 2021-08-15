@@ -18,7 +18,7 @@ export default function OrganizationDetails({ web3, accessToken }) {
     const [createNewPoll, setCreateNewPoll] = useState(false);
     const [editOrg, setEditOrg] = useState(false);
     const [refresh, setRefresh] = useState(false);
-    const contractAddr = useParams().address
+    const contractAddr = useParams().address;
 
     useEffect(() => {
         const init = async () => {
