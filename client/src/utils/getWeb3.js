@@ -20,13 +20,16 @@ const getWeb3 = async () => {
 const requestAccounts = async () => {
     const provider = await detectEthereumProvider();
     if(!provider) return false;
-    if(provider.selectedAddress) return provider.selectedAddress;
+    let acctArray = await provider.request({method: 'eth_accounts'});
+    if(acctArray.length > 0) return acctArray[0];
     try{
         await provider.request({method: "eth_requestAccounts"});
+        acctArray = await provider.request({method: 'eth_accounts'});
     } catch(err) {
         console.error(err);
     }
-    return provider.selectedAddress;
+    
+    return acctArray[0];
 }
 
 

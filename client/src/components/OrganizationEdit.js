@@ -5,7 +5,7 @@ import { OrganizationContext } from './OrganizationDetails';
 export default function OrganizationEdit({ name, approveAddress }) {
     const [editName, setName] = useState(name);
     // const [editTokenList, setTokenList] = useState(tokenList);
-    const [newAddress, setNewAddress] = useState();
+    const [newAddress, setNewAddress] = useState('');
     const { tokenList } = useContext(OrganizationContext);
     
     // Edit token access. delete, generate, appointAdmin

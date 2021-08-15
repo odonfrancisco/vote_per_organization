@@ -11,11 +11,12 @@ function App() {
   const [accessToken, setAccessToken] = useState();
   const [selectedAddress, setSelectedAddress] = useState();
   const [redirect, setRedirect] = useState();
+  const [refresh, setRefresh] = useState(false);
 
   useEffect(() => {
     const init = async () => {
       const web3 = await getWeb3();
-      const acctArray = await web3.eth.getAccounts();
+      const acctArray = await window.ethereum.request({method: 'eth_accounts'});
       const currentAddress = acctArray[0];
       const accessToken = await getAccessToken(web3);
 
@@ -27,6 +28,14 @@ function App() {
       }
     }
     init();
+  }, [refresh])
+
+  // this refreshes the page anytime user changes accounts
+  useEffect(() => {
+    window.ethereum.on("accountsChanged", accounts => {
+      setRefresh(refresh => !refresh);
+    })
+    return(() => window.ethereum.removeAllListeners());
   }, [])
 
   const connectEth = async (
@@ -73,7 +82,7 @@ function App() {
     return (
       <div>
         <h1>Please connect your MetaMask account to use this Dapp</h1>
-        <button onClick={connectEth}>
+        <button onClick={() => connectEth()}>
           Connect Metamask
         </button>
       </div>

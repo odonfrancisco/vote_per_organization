@@ -14,18 +14,20 @@ export default function OrganizationDetails({ web3, accessToken }) {
     const [tokenId, setTokenId] = useState();
     const [tokenList, setTokenList] = useState();
     const [isAdmin, setIsAdmin] = useState();
+    const [currentAddress, setCurrentAddress] = useState();
     const [createNewPoll, setCreateNewPoll] = useState(false);
     const [editOrg, setEditOrg] = useState(false);
     const [refresh, setRefresh] = useState(false);
     const contractAddr = useParams().address
-    const currentAddress = web3.currentProvider.selectedAddress;
 
     useEffect(() => {
         const init = async () => {
+            const acctArray = await window.ethereum.request({method: 'eth_accounts'});
+            const currentAddress = acctArray[0];
             const contract = await getVotingContract(web3, contractAddr);
             const name = await contract.methods.name().call();
             const polls = await contract.methods.getPolls().call();
-            const tokenId = await getCurrentToken();
+            const tokenId = await getCurrentToken(currentAddress);
             if(!tokenId) return;
             const tokenList = await contract.methods.getTokenIds().call();
             const tokenRef = await contract.methods.getTokenRef(tokenId).call();
@@ -33,6 +35,7 @@ export default function OrganizationDetails({ web3, accessToken }) {
             // console.log('polls');
             // console.log(tokenList);
             
+            setCurrentAddress(currentAddress);
             setVotingContract(contract);
             setName(name);
             setPolls(polls);
@@ -41,9 +44,12 @@ export default function OrganizationDetails({ web3, accessToken }) {
             setIsAdmin(tokenRef.isAdmin);
         }
         init();
-    }, [refresh])
+        /* Adding web3 here because need to refresh this component
+        when App.js refreshes. Not sure i like this method but it works
+        for now. */
+    }, [refresh, web3])
 
-    const getCurrentToken = async () => {
+    const getCurrentToken = async currentAddress => {
         // const currentAddress = web3.currentProvider.selectedAddress;
         const balanceOf = await accessToken.methods.balanceOf(currentAddress).call();
         let tokenId = undefined;
@@ -61,11 +67,8 @@ export default function OrganizationDetails({ web3, accessToken }) {
         const tx = await votingContract.methods
             .createPoll(newName, options)
             .send({from: currentAddress});
-        console.log('name & options');
         // If tx.events.PollCreated, then poll was created successfully
         // Need to handle event if not generate correctly
-        console.log(tx.events.PollCreated);
-        console.log(options);
         const polls = await votingContract.methods.getPolls().call();
         setPolls(polls);
     }
@@ -96,13 +99,16 @@ export default function OrganizationDetails({ web3, accessToken }) {
             .send({from: currentAddress})
         /* How i decided to refresh the whole page when admin is updated.
         it works well but i wonder if there's a better way to accomplish this */
-        setRefresh(true);
+        setRefresh(refresh => !refresh);
     }
 
     const pollCreationButton = () => {
         return (
             <button
-                onClick={() => setCreateNewPoll(createNewPoll => !createNewPoll)}
+                onClick={() => {
+                    setCreateNewPoll(createNewPoll => !createNewPoll);
+                    setEditOrg(false);
+                }}
             >
                 {createNewPoll ? 'Hide Poll Creation' : 'Create New Poll'}
             </button>
@@ -112,7 +118,10 @@ export default function OrganizationDetails({ web3, accessToken }) {
     const organizationEditButton = () => {
         return (
             <button
-                onClick={() => setEditOrg(editOrg => !editOrg)}
+                onClick={() => {
+                    setEditOrg(editOrg => !editOrg)
+                    setCreateNewPoll(false);
+                }}
             >
                 {editOrg ? 'Hide Organization Edit' : `Edit ${name}`}
             </button>
