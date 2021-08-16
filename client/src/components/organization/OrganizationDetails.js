@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { useParams } from 'react-router'
-import { getVotingContract } from '../utils/votingContract';
-import PollList from './poll/PollList';
-import PollCreate from './poll/PollCreate';
+import { getVotingContract } from '../../utils/votingContract';
+import PollList from '../poll/PollList';
+import PollCreate from '../poll/PollCreate';
 import OrganizationEdit from './OrganizationEdit';
 
 export const OrganizationContext = React.createContext();
@@ -22,11 +22,14 @@ export default function OrganizationDetails({ web3, accessToken }) {
 
     useEffect(() => {
         const init = async () => {
+            console.log("ORG DETAILS");
+            console.log(web3);
+            console.log(accessToken);
             const acctArray = await window.ethereum.request({method: 'eth_accounts'});
             const currentAddress = acctArray[0];
             const contract = await getVotingContract(web3, contractAddr);
             const name = await contract.methods.name().call();
-            const polls = await contract.methods.getPolls().call();
+            const polls = await contract.methods.getPolls().call({from: currentAddress});
             const tokenId = await getCurrentToken(currentAddress);
             if(!tokenId) return;
             const tokenList = await contract.methods.getTokenIds().call();
@@ -63,16 +66,15 @@ export default function OrganizationDetails({ web3, accessToken }) {
         return tokenId;
     }
 
-    const createPoll = async (newName, options) => {
+    const changeName = async newName => {
         const tx = await votingContract.methods
-            .createPoll(newName, options)
+            .changeName(newName)
             .send({from: currentAddress});
-        // If tx.events.PollCreated, then poll was created successfully
-        // Need to handle event if not generate correctly
-        const polls = await votingContract.methods.getPolls().call();
-        setPolls(polls);
+        const name = await votingContract.methods.name().call();
+        // not sure if this will refresh everything i need. actually i think it will. let's check
+        setName(name);
     }
-
+    
     const approveAddress = async newAddress => {
         const tx = await votingContract.methods
             /* Need to pass contractAddr so that smart contract can retrieve
@@ -102,7 +104,31 @@ export default function OrganizationDetails({ web3, accessToken }) {
         setRefresh(refresh => !refresh);
     }
 
-    const pollCreationButton = () => {
+    const createPoll = async (newName, options) => {
+        /* I'm saving transaction as variable in case i'm looking to
+        do something with the received event... not sure what just yet */
+
+        const tx = await votingContract.methods
+            .createPoll(newName, options)
+            .send({from: currentAddress});
+        // If tx.events.PollCreated, then poll was created successfully
+        // Need to handle event if not generate correctly
+        const polls = await votingContract.methods.getPolls().call();
+        setPolls(polls);
+        setCreateNewPoll(false);
+    }
+
+    /* am NOT handling errors correctly. definitely need to test
+    for if user rejects the transaction */
+    const deletePoll = async (pollId) => {
+        await votingContract.methods
+            .deletePoll(pollId)
+            .send({from: currentAddress});
+        const polls = await votingContract.methods.getPolls().call();
+        setPolls(polls);
+    }
+
+    const PollCreationButton = () => {
         return (
             <button
                 onClick={() => {
@@ -115,7 +141,7 @@ export default function OrganizationDetails({ web3, accessToken }) {
         )
     }
 
-    const organizationEditButton = () => {
+    const OrganizationEditButton = () => {
         return (
             <button
                 onClick={() => {
@@ -136,25 +162,30 @@ export default function OrganizationDetails({ web3, accessToken }) {
     a 'loading' state variable maybe? */
     if(!tokenList) return null;
 
+    /* Should i have different contexts? I feel like i should
+    like one for admin shits, another for poll editing, another
+    for token editing, etc */
     const orgContextValue = {
         isAdmin,
         tokenList,
         getTokenRef: votingContract.methods.getTokenRef,
+        updateAdmin,
         removeApprovedVoter,
-        updateAdmin
+        deletePoll
     }
     
     return (
         <OrganizationContext.Provider value={orgContextValue}>
             <div>
                 <h1>{name}</h1>
-                {isAdmin && pollCreationButton()}
-                {isAdmin && organizationEditButton()}
+                {isAdmin && <PollCreationButton/>}
+                {isAdmin && <OrganizationEditButton/>}
                 {isAdmin && createNewPoll && <PollCreate createPoll={createPoll}/>}
                 {isAdmin && editOrg && 
                     <OrganizationEdit 
                         name={name} 
                         approveAddress={approveAddress}
+                        changeName={changeName}
                     />
                 }
                 <PollList

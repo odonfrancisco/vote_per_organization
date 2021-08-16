@@ -1,15 +1,18 @@
 import React, { useState, useContext } from 'react'
-import EditToken from './EditToken';
+import EditToken from '../EditToken';
 import { OrganizationContext } from './OrganizationDetails';
 
-export default function OrganizationEdit({ name, approveAddress }) {
+export default function OrganizationEdit({ name, approveAddress, changeName }) {
     const [editName, setName] = useState(name);
     // const [editTokenList, setTokenList] = useState(tokenList);
     const [newAddress, setNewAddress] = useState('');
     const { tokenList } = useContext(OrganizationContext);
     
     // Edit token access. delete, generate, appointAdmin
-    // Edit name
+    // // want to add a popup when click 'appoint admin' so user is SURE
+    // // they want to give up admin rights
+    /* could potentially add a feature to let admin specify a name
+    per approved address */
     
     return (
         <div>
@@ -18,6 +21,13 @@ export default function OrganizationEdit({ name, approveAddress }) {
                 value={editName}
                 onChange={e => setName(e.target.value)}
             />
+            <button
+                onClick={() => {
+                    changeName(editName);
+                }}
+            >
+                Change Name
+            </button>
             <br/>
             <label>
                 Approve an address

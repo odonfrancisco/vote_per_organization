@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react'
-import { OrganizationContext } from './OrganizationDetails'
+import { OrganizationContext } from './organization/OrganizationDetails'
 
 export default function EditToken({ token }) {
     const { 

@@ -105,6 +105,10 @@ contract VotingContract {
         return tokenIds;
     }
 
+    function changeName(string memory newName) external {
+        name = newName;
+    }
+
     /* Would like the ability to generateAdmin within constructor but 
     because i need the votingContract's address in string format (for the tokenURI), 
     don't think it'll be possible */
@@ -218,6 +222,25 @@ contract VotingContract {
             emit PollCreated(p.id, p.issue);
     }
 
+    /* poll will not _actually_ be deleted in order to discourage
+    admin from carelessly creating polls. poll data will be erased
+    but replaced with deleted-sig values */
+    function deletePoll(uint pollId) external onlyAdmin() {
+        require(pollId < polls.length,
+            "Must pass a valid poll ID");
+        string memory deletedPollSignature = "__??//::";
+        /* I don't really need this right? solidity will automatically
+        receive pollId as an unsigned int... */
+        // require(pollId > 0,
+        //     "Poll ID must be greater than 0");
+        Poll memory p;
+        p.id = pollId;
+        p.issue = deletedPollSignature;
+        p.result = -2;
+
+        polls[pollId] = p;
+    }
+
     function vote(uint pollId, uint optionId) external onlyApproved() {
         require(pollId < polls.length, 
             "Must pass a valid poll ID");
@@ -275,9 +298,9 @@ contract VotingContract {
     }
 
     modifier onlyApproved() {
-        uint balanceOf = accessToken.balanceOf(msg.sender);
-        require(balanceOf == 1,
-        "Must hold an access token to perform this action");
+        int tokenId = getTokenId(msg.sender);
+        require(approvedTokens[uint(tokenId)].owner == msg.sender,
+            "Must hold an access token to perform this action");
         _;
     }
 

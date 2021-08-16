@@ -122,6 +122,10 @@ contract("VotingContract", (accounts) => {
         );
     })
 
+    /* Do i need to be testing for admin check so often? it's the same
+    modifier i'm using across all the functions. I guess if anything it 
+    ensures that you correctly added the onlyAdmin() modifier but even 
+    that seems like a stretch */ 
     it("Does NOT remove approved voter if not called by admin", async () => {
         await expectRevert(
             vc.removeApprovedVoter(account1, {from: account2}),

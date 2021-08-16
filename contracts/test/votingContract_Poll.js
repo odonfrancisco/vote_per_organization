@@ -8,7 +8,8 @@ contract("VotingContract_Poll", (accounts) => {
     let account1;
     let account2;
     let account3;
-    let address0 = "0x0000000000000000000000000000000000000000";
+    const address0 = "0x0000000000000000000000000000000000000000";
+    const deletedPollSignature = "__??//::";
 
     const pollIssue = "First Poll";
     const pollIssue2 = "Second Poll";
@@ -23,16 +24,16 @@ contract("VotingContract_Poll", (accounts) => {
         account1 = accounts[0];
         account2 = accounts[1];
         account3 = accounts[2];
+    })
+
+    it("Successfully creates polls", async () => {
         const tx = await vc.createPoll(pollIssue, pollOptions, {from: account1})
         const tx2 = await vc.createPoll(pollIssue2, pollOptions2, {from: account1})
         pollId = tx.receipt.logs[0].args[0];
         pollId2 = tx2.receipt.logs[0].args[0];
-    })
-
-    it("Successfully creates polls", async () => {
         const newPoll = await vc.getPoll(pollId);
         const newPoll2 = await vc.getPoll(pollId2);
-        
+
         assert(newPoll.issue === pollIssue,
             "Poll1 issue not saved correctly");
         assert(newPoll.id.toString() === pollId.toString(),
@@ -82,6 +83,34 @@ contract("VotingContract_Poll", (accounts) => {
         await expectRevert(
             vc.createPoll(pollIssue, [], {from: account1}),
             "Options parameter must not be empty"
+        );
+    })
+
+    it("Successfully deletes a poll", async () => {
+        const tx = await vc.createPoll("I should be deleted", pollOptions, {from: account1})
+        const pollId = tx.receipt.logs[0].args[0];
+        await vc.deletePoll(pollId, {from: account1});
+        const pollAfterDelete = await vc.getPoll(pollId);
+
+        assert(pollAfterDelete.issue === deletedPollSignature,
+            "Deleted-poll issue not saved correctly");
+        assert(pollAfterDelete.result === '-2',
+            "Deleted-poll result not saved as -2");
+        assert(pollAfterDelete.options.length === 0,
+            "Deleted-poll options not saved correctly");
+    })
+
+    it("Does NOT delete poll if not admin", async () => {
+        await expectRevert(
+            vc.deletePoll(pollId, {from: account2}),
+            "Only admin may perform this action"
+        );
+    })
+
+    it("Does NOT delet poll if invalid pollId is passed", async () => {
+        await expectRevert(
+            vc.deletePoll(999, {from: account1}),
+            "Must pass a valid poll ID"
         );
     })
 

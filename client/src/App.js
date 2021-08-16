@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { getWeb3, requestAccounts } from './utils/getWeb3';
-import OrganizationDetails from './components/OrganizationDetails';
+import { createVotingContract } from './utils/votingContract';
+import OrganizationDetails from './components/organization/OrganizationDetails';
+import OrganizationList from './components/organization/OrganizationList';
+import OrganizationCreate from './components/organization/OrganizationCreate';
+import NavBar from './components/NavBar';
 import { Switch, Route, Redirect } from 'react-router-dom';
 import './css/App.css';
 
@@ -10,6 +14,7 @@ function App() {
   const [web3, setWeb3] = useState();
   const [accessToken, setAccessToken] = useState();
   const [selectedAddress, setSelectedAddress] = useState();
+  const [tokenURIs, setTokenURIs] = useState([]);
   const [redirect, setRedirect] = useState();
   const [refresh, setRefresh] = useState(false);
 
@@ -56,6 +61,8 @@ function App() {
         const tokenURI = await accessToken.methods.tokenURI(tokenId).call();
         userTokenURIs.push(tokenURI);
       }
+
+      setTokenURIs(userTokenURIs);
       
       // using == because accessToken.balanceOf returns a string
       if(balanceOfUser == 1){
@@ -68,6 +75,11 @@ function App() {
       } else {
         setRedirect(<Redirect to="/newOrganization"/>)
       }
+  }
+
+  const createOrganization = async name => {
+    await createVotingContract(name, selectedAddress, web3, accessToken._address);
+    setRefresh(refresh => !refresh);
   }
 
   if(!web3) {
@@ -90,14 +102,21 @@ function App() {
   }
 
   return (
-    <div>
+    <div> 
+      {/* Is this the correct way to render a redirect? */}
       {redirect}
+      
+      <NavBar/>
+      
       <Switch>
         <Route exact path="/newOrganization">
-          {/* newOrgComponent */}
+          <OrganizationCreate 
+            createOrganization={createOrganization}
+            tokenAddr={accessToken._address}
+          />
         </Route>
         <Route exact path="/organizations">
-          {/* OrganizationListComponent */}
+          <OrganizationList tokenURIs={tokenURIs}/>
         </Route>
         <Route path="/organizations/:address">
           <OrganizationDetails 

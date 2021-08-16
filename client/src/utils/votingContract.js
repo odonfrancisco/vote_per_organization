@@ -7,14 +7,26 @@ const getVotingContract = async (web3, contractAddr) => {
     )
 }
 
-// Need to leverage web3.eth.contract.deploy or some shit like that
-const createVotingContract = async (web3, tokenAddr) => {
-    const networkId = await web3.eth.net.getId();
-    const contractDeployment = await VotingContract.networks[networkId];
-    return new web3.eth.Contract(
-        VotingContract.abi,
-        contractDeployment && contractDeployment.address
+const createVotingContract = async (name, currentAddress, web3, tokenAddr) => {
+    const contract = await new web3.eth.Contract(
+        VotingContract.abi
     )
+    contract.deploy({
+        data: VotingContract.bytecode,
+        arguments: [name, tokenAddr]
+    })
+    .send({
+        from: currentAddress
+    })
+    .then(async deployedContract => {
+        await deployedContract.methods
+            .generateAdmin(deployedContract.options.address)
+            .send({from: currentAddress});
+    })
+    .catch(err => {
+        console.error(err);
+    })
+
 }
 
 export { getVotingContract, createVotingContract };
