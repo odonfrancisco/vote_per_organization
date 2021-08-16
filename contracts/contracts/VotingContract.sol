@@ -226,6 +226,7 @@ contract VotingContract {
     admin from carelessly creating polls. poll data will be erased
     but replaced with deleted-sig values */
     function deletePoll(uint pollId) external onlyAdmin() {
+        // Need to require that poll hasn't already been decided
         require(pollId < polls.length,
             "Must pass a valid poll ID");
         string memory deletedPollSignature = "__??//::";
@@ -306,7 +307,8 @@ contract VotingContract {
 
     modifier onlyAdmin() {
         int tokenId = getTokenId(msg.sender);
-        require(tokenId >= 0, 
+        // admin tokenID will always be the first lmnt in tokenIds array
+        require(tokenId >= tokenIds[0], 
             "Only admin may perform this action");
         require(approvedTokens[uint(tokenId)].isAdmin == true,
             "Only admin may perform this action");

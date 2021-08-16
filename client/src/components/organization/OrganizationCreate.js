@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 
 export default function OrganizationCreate({ 
-    createOrganization}) {
+    createOrganization }) {
         const [name, setName] = useState('');
 
         return (

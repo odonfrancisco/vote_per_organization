@@ -1,14 +1,29 @@
+import './css/App.css';
 import React, { useState, useEffect } from 'react';
+// Web3 utility functions
 import { getWeb3, requestAccounts } from './utils/getWeb3';
 import { createVotingContract } from './utils/votingContract';
+// Components
 import OrganizationDetails from './components/organization/OrganizationDetails';
 import OrganizationList from './components/organization/OrganizationList';
 import OrganizationCreate from './components/organization/OrganizationCreate';
 import NavBar from './components/NavBar';
+// Redirect library
 import { Switch, Route, Redirect } from 'react-router-dom';
-import './css/App.css';
 
 import getAccessToken from './utils/getTokenContract';
+
+// tasks
+// Add ACTK to user's wallet
+/* Store tokenURI org name in browser localstorage as temporary fix 
+to not having org name saved to tokenURI (and so as to not be 
+calling new web3.contract per item in list (would be fucking nuts if someone 
+had like 28 different orgs they're a part of) )*/ 
+/* Add popup when creating org to give user heads up 
+that they will need to confirm two transactions in order to become admin
+(would be fixed if using ipfs in conjunction with tokenURI ) */
+// Potentially add name (person name) field to tokenRef
+// Should be able to delete an option entry before submit on PollCreate
 
 function App() {
   const [web3, setWeb3] = useState();
@@ -37,7 +52,7 @@ function App() {
 
   // this refreshes the page anytime user changes accounts
   useEffect(() => {
-    window.ethereum.on("accountsChanged", accounts => {
+    window.ethereum.on("accountsChanged", () => {
       setRefresh(refresh => !refresh);
     })
     return(() => window.ethereum.removeAllListeners());
@@ -70,7 +85,6 @@ function App() {
           pathname: `/organizations/${userTokenURIs[0]}`
         }}/>);
       } else if(balanceOfUser > 1){
-        // Should be passing array of TokenURI's? or call for them inside /organizations?
         setRedirect(<Redirect to="/organizations"/>)
       } else {
         setRedirect(<Redirect to="/newOrganization"/>)
