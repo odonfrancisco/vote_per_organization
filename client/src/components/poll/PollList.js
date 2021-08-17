@@ -1,5 +1,6 @@
 import React from 'react'
 import PollDetails from './PollDetails'
+import PollDecided from './PollDecided'
 
 export default function PollList({ polls }) {
     
@@ -10,7 +11,7 @@ export default function PollList({ polls }) {
                 return (
                     <div key={poll.id}>
                         {
-                            poll.result !== '-2'
+                            poll.result === '-1'
                             &&
                             <PollDetails
                                 poll={poll}
@@ -22,6 +23,13 @@ export default function PollList({ polls }) {
                             <div>
                                 This poll has been deleted
                             </div>
+                        }
+                        {
+                            poll.result >= 0
+                            &&
+                            <PollDecided
+                                poll={poll}
+                            />
                         }
                         <br/>
                     </div>

@@ -22,9 +22,6 @@ export default function OrganizationDetails({ web3, accessToken }) {
 
     useEffect(() => {
         const init = async () => {
-            console.log("ORG DETAILS");
-            console.log(web3);
-            console.log(accessToken);
             const acctArray = await window.ethereum.request({method: 'eth_accounts'});
             const currentAddress = acctArray[0];
             const contract = await getVotingContract(web3, contractAddr);
@@ -64,6 +61,13 @@ export default function OrganizationDetails({ web3, accessToken }) {
             }
         }
         return tokenId;
+    }
+
+    const checkHasVoted = async pollId => {
+        const hasVoted = await votingContract.methods
+            .hasVoted(tokenId, pollId)
+            .call()
+        return hasVoted;
     }
 
     const changeName = async newName => {
@@ -120,9 +124,17 @@ export default function OrganizationDetails({ web3, accessToken }) {
 
     /* am NOT handling errors correctly. definitely need to test
     for if user rejects the transaction */
-    const deletePoll = async (pollId) => {
+    const deletePoll = async pollId => {
         await votingContract.methods
             .deletePoll(pollId)
+            .send({from: currentAddress});
+        const polls = await votingContract.methods.getPolls().call();
+        setPolls(polls);
+    }
+
+    const submitVote = async (pollId, optionId) => {
+        await votingContract.methods
+            .vote(pollId, optionId)
             .send({from: currentAddress});
         const polls = await votingContract.methods.getPolls().call();
         setPolls(polls);
@@ -171,7 +183,9 @@ export default function OrganizationDetails({ web3, accessToken }) {
         getTokenRef: votingContract.methods.getTokenRef,
         updateAdmin,
         removeApprovedVoter,
-        deletePoll
+        deletePoll,
+        submitVote,
+        checkHasVoted
     }
     
     return (

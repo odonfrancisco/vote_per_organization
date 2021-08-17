@@ -65,7 +65,7 @@ contract VotingContract {
     mapping(uint => TokenRef) approvedTokens;
     // stores whether token has voted in a particular poll
     // mapping(tokenId => mapping(pollId => bool))
-    mapping(uint => mapping(uint => bool)) hasVoted;
+    mapping(uint => mapping(uint => bool)) public hasVoted;
     AccessToken accessToken;
     
 
@@ -307,8 +307,11 @@ contract VotingContract {
 
     modifier onlyAdmin() {
         int tokenId = getTokenId(msg.sender);
+        // ensures user has a valid tokenId
+        require(uint(tokenId) >= 0,
+            "Only admin may perform this action");
         // admin tokenID will always be the first lmnt in tokenIds array
-        require(tokenId >= tokenIds[0], 
+        require(uint(tokenId) == tokenIds[0], 
             "Only admin may perform this action");
         require(approvedTokens[uint(tokenId)].isAdmin == true,
             "Only admin may perform this action");

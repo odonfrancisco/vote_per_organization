@@ -11,6 +11,7 @@ module.exports = async function (deployer, network, accounts) {
   const account1 = accounts[0];
   const account2 = accounts[1];
   const account3 = accounts[2];
+  const account4 = accounts[3];
   await deployer.deploy(AccessToken);
   const token = await AccessToken.deployed();
   await deployer.deploy(
@@ -27,4 +28,6 @@ module.exports = async function (deployer, network, accounts) {
     account2, vc.address, {from: account1});
   await vc.generateAccessToken(
     account3, vc.address, {from: account1});
+  await vc.generateAccessToken(
+    account4, vc.address, {from: account1});
 };
