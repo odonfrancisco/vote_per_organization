@@ -24,6 +24,14 @@ that they will need to confirm two transactions in order to become admin
 (would be fixed if using ipfs in conjunction with tokenURI ) */
 // Potentially add name (person name) field to tokenRef
 // Should be able to delete an option entry before submit on PollCreate
+// Change checkHasVoted in pollDetails to use poll.voters instead of contract.hasVoted
+// I feel like i'm not leveraging the emitted contract events 
+// instead of calling getPolls() when someone votes, could just call the individual poll
+// need to disable vote button as soon as someone clicks it until tx is rejected
+
+// feature creep
+// could add a function so that poll will automatically decide itself in x amount of time
+// prevent admin from creating a second poll with the same name
 
 function App() {
   const [web3, setWeb3] = useState();

@@ -44,6 +44,7 @@ contract VotingContract {
         uint id;
         // issue on which voters are deciding on
         string issue;
+        // Not even sure i need this votersArr tbh...
         uint[] voters;
         string[] options;
         uint[] results;
@@ -258,8 +259,13 @@ contract VotingContract {
         p.voters.push(tokenId);
         p.results[optionId]++;
         hasVoted[tokenId][pollId] = true;
+        bool decided = false;
+
+        if(p.voters.length == tokenIds.length){
+            decided = decideResult(pollId);
+        }
         
-        emit VoteCasted(pollId, optionId, msg.sender, decideResult(pollId));
+        emit VoteCasted(pollId, optionId, msg.sender, decided);
     }
 
     /* Should I require that a valid Poll ID is passed? 
@@ -284,18 +290,38 @@ contract VotingContract {
             return false;
         }
 
-        uint mostVotes;
-        uint winnerIndex;
+        uint mostVotes = p.results[p.options.length - 1];
+        uint winners;
+        uint[] memory winnerIndexes = new uint[](p.options.length);
         for(uint i = 0; i < p.results.length; i++){
             /* "should" always work since this function won't be called
             until someone casts a vote. will consider adding a check */ 
-            if(p.results[i] > mostVotes) {
-                winnerIndex = i;
+            if(p.results[i] >= mostVotes) {
+                winnerIndexes[winners] = i;
+                mostVotes = p.results[i];
+                winners++;
             }
         }
-        p.result = int(winnerIndex);
+        // winners should _technically_ always be greater than 0
+        if(winners == 1) {
+            p.result = int(winnerIndexes[0]);
+            return true;
+        // Do i need this else statement?
+        } else {
+            string[] memory newOptions = new string[](winners);
+            p.results = new uint[](winners);
+            uint[] memory votersArr;
+            p.voters = votersArr;
+            for(uint i = 0; i < winners; i++){
+                newOptions[i] = p.options[winnerIndexes[i]];
+            }
+            for(uint i = 0; i < tokenIds.length; i++){
+                hasVoted[tokenIds[i]][pollId] = false;
+            }
+            p.options = newOptions;
 
-        return true;
+            return false;
+        }
     }
 
     modifier onlyApproved() {

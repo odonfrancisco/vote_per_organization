@@ -185,7 +185,8 @@ export default function OrganizationDetails({ web3, accessToken }) {
         removeApprovedVoter,
         deletePoll,
         submitVote,
-        checkHasVoted
+        checkHasVoted,
+        currentAddress
     }
     
     return (
