@@ -1,3 +1,9 @@
+import Typography from '@material-ui/core/Typography';
+import ButtonGroup from '@material-ui/core/ButtonGroup';
+import Grid from '@material-ui/core/Grid';
+import Button from '@material-ui/core/Button';
+import { ThemeProvider, createTheme, responsiveFontSizes } from '@material-ui/core/styles';
+
 import React, { useState, useEffect, useContext } from 'react'
 import { OrganizationContext } from '../organization/OrganizationDetails'
 
@@ -27,26 +33,29 @@ export default function PollDetails({ poll }) {
 
     const EditPollButton = () => {
         return(
-            <button
+            <Button
+                variant="contained"
                 onClick={() => {
                     setShowEditPoll(showEditPoll => !showEditPoll);
                 }}
             >
                 {/* should put poll issue in bold */}
                 {showEditPoll ? `Hide Edit ${poll.issue}` : `Edit ${poll.issue}`}
-            </button>
+            </Button>
         )
     }
     const DeletePollButton = () => {
         return(
-            <button
+            <Button
+                variant="contained"
+                color="secondary"
                 onClick={() => {
                     deletePoll(poll.id);
                     setShowEditPoll(false);
                 }}
             >
                 Delete {poll.issue}
-            </button>
+            </Button>
         )
     }
 
@@ -57,30 +66,43 @@ export default function PollDetails({ poll }) {
         return(
             poll.options.map((option, i) => {
                 return (
-                    <button
+                    <Button
                         key={i}
+                        variant="outlined"
                         onClick={() => {
                             submitVote(poll.id, i);
                         }}
                         {...disabled}
                     >
-                        {option}
-                    </button>
+                        <Typography
+                            variant="button"
+                        >
+                            {option}
+                        </Typography>
+                    </Button>
                 )
             })
         )
     }
 
+    let theme = createTheme();
+    theme = responsiveFontSizes(theme);
+
     return (
-        <div>
-            <div>{poll.id}</div>
-            <div>{poll.issue}</div>
-            <div>{ <ShowOptions/> }</div>
-            <div>Voters left: {votersLeft}</div>
-            {/* Buttons to vote */}
+        <ThemeProvider theme={theme}>
+            <Typography variant="h4">{poll.issue}</Typography>
+            <Typography variant="h6">Voters left: {votersLeft}</Typography>
+            <Grid
+                container
+                direction="column"
+                // justifyContent="center"
+                rowSpacing={1}
+            > 
+                { <ShowOptions/> } 
+            </Grid>
+            <br/>
             {isAdmin && poll.result === '-1' && <EditPollButton/> }
             {isAdmin && poll.result === '-1' && showEditPoll && <DeletePollButton/> }
-
-        </div>
+        </ThemeProvider>
     )
 }

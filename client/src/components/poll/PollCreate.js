@@ -1,3 +1,8 @@
+import TextField from '@material-ui/core/TextField'
+import Button from '@material-ui/core/Button';
+import IconButton from '@material-ui/core/IconButton';
+import AddQueue from '@material-ui/icons/AddCircleOutline'
+
 import React, { useState } from 'react'
 
 export default function PollCreate({ createPoll }) {
@@ -8,47 +13,59 @@ export default function PollCreate({ createPoll }) {
     return (
         <div>
             <h5>{pollOptions.map((e, i) => {
-                if(i < pollOptions.length -1){
+                const notLastElement = i < pollOptions.length - 1;
+                if(notLastElement){
                     return `${e}, `
                 }
                 return `${e}`
             })}</h5>
             <br/>
-            <label>New Poll </label>
-            <input 
+            {/* <label>New Poll </label> */}
+            <TextField 
+                placeholder="New Poll Name"
                 type="text"
                 onChange={e => setPollName(e.target.value)}
                 value={pollName}
             />
             <br/>
-            <form>
-                <label>Poll Options </label>
-                <input
+            <form
+                onSubmit={e => {
+                    e.preventDefault();
+                    setPollOptions(prevOptions => [...prevOptions, option]);
+                    setOption('');
+                }}
+            >
+                {/* <label>Poll Options </label> */}
+                <TextField
+                    placeholder="Poll Option"
                     type="text"
                     onChange={e => setOption(e.target.value)}
                     value={option}
                 />
-                <button
+                <IconButton
+                    variant="contained"
                     onClick={e => {
                         e.preventDefault();
                         setPollOptions(prevOptions => [...prevOptions, option]);
                         setOption('');
                     }}
                 >
-                    +
-                </button>
+                    <AddQueue/>
+                </IconButton>
             </form>
 
             <br/>
             
-            <button onClick={() => {
-                createPoll(pollName, pollOptions);
-                setPollName('');
-                setOption('');
-                setPollOptions([]);
-            }}>
+            <Button 
+                variant="contained"
+                onClick={() => {
+                    createPoll(pollName, pollOptions);
+                    setPollName('');
+                    setOption('');
+                    setPollOptions([]);
+                }}>
                 Submit
-            </button>
+            </Button>
         </div>
     )
 }

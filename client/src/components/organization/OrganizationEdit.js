@@ -43,6 +43,7 @@ export default function OrganizationEdit({ name, approveAddress, changeName }) {
                     setNewAddress('');
                 }}
             >
+                {/* Use personAddIcon */}
                 Approve
             </button>
             {tokenList.map(token => {

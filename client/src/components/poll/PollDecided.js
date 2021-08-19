@@ -1,18 +1,22 @@
+import Typography from '@material-ui/core/Typography';
+import { ThemeProvider, createTheme, responsiveFontSizes } from '@material-ui/core/styles';
+
 import React from 'react'
 
 export default function PollDecided({ poll }) {
+
+    let theme = createTheme();
+    theme = responsiveFontSizes(theme);
+
     return (
-        <div>
-            <div>
-                {poll.id}
-            </div>
-            <div>
+        <ThemeProvider theme={theme}>
+            <Typography variant="h4">
                 {poll.issue}
-            </div>
-            <div>
+            </Typography>
+            <Typography variant="h6">
                 The winner of {poll.issue} is {poll.options[poll.result]}
-            </div>
+            </Typography>
             
-        </div>
+        </ThemeProvider>
     )
 }

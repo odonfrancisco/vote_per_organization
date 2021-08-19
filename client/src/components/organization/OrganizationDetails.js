@@ -1,3 +1,7 @@
+import Button from '@material-ui/core/Button';
+import Typography from '@material-ui/core/Typography';
+import Grid from '@material-ui/core/Grid';
+
 import React, { useState, useEffect } from 'react'
 import { useParams } from 'react-router'
 import { getVotingContract } from '../../utils/votingContract';
@@ -142,27 +146,29 @@ export default function OrganizationDetails({ web3, accessToken }) {
 
     const PollCreationButton = () => {
         return (
-            <button
+            <Button
+                variant="contained"
                 onClick={() => {
                     setCreateNewPoll(createNewPoll => !createNewPoll);
                     setEditOrg(false);
                 }}
             >
                 {createNewPoll ? 'Hide Poll Creation' : 'Create New Poll'}
-            </button>
+            </Button>
         )
     }
 
     const OrganizationEditButton = () => {
         return (
-            <button
+            <Button
+                variant="contained"
                 onClick={() => {
                     setEditOrg(editOrg => !editOrg)
                     setCreateNewPoll(false);
                 }}
             >
                 {editOrg ? 'Hide Organization Edit' : `Edit ${name}`}
-            </button>
+            </Button>
         )
     }
 
@@ -192,16 +198,23 @@ export default function OrganizationDetails({ web3, accessToken }) {
     return (
         <OrganizationContext.Provider value={orgContextValue}>
             <div>
-                <h1>{name}</h1>
-                {isAdmin && <PollCreationButton/>}
-                {isAdmin && <OrganizationEditButton/>}
-                {isAdmin && createNewPoll && <PollCreate createPoll={createPoll}/>}
-                {isAdmin && editOrg && 
-                    <OrganizationEdit 
+                <Typography variant="h3">{name}</Typography>
+                <Grid container spacing={2}>
+                    <Grid item>
+                        {isAdmin && <PollCreationButton/>}
+                    </Grid>
+                    <Grid item>
+                        {isAdmin && <OrganizationEditButton/>}
+                    </Grid>
+                </Grid>
+                {isAdmin && createNewPoll 
+                    && <PollCreate createPoll={createPoll}/>}
+                {isAdmin && editOrg 
+                    && <OrganizationEdit 
                         name={name} 
                         approveAddress={approveAddress}
                         changeName={changeName}
-                    />
+                        />
                 }
                 <PollList
                     polls={polls}

@@ -1,4 +1,7 @@
 import './css/App.css';
+import Container from '@material-ui/core/Container';
+import Box from '@material-ui/core/Box';
+
 import React, { useState, useEffect } from 'react';
 // Web3 utility functions
 import { getWeb3, requestAccounts } from './utils/getWeb3';
@@ -28,10 +31,18 @@ that they will need to confirm two transactions in order to become admin
 // I feel like i'm not leveraging the emitted contract events 
 // instead of calling getPolls() when someone votes, could just call the individual poll
 // need to disable vote button as soon as someone clicks it until tx is rejected
+// need to refresh app when create a new organization
+/* need to prevent adding an empty option on poll create + limit options to 5
+pus show new poll name on top of options */
+
 
 // feature creep
 // could add a function so that poll will automatically decide itself in x amount of time
+// // or adding a button for admin to decide a poll
 // prevent admin from creating a second poll with the same name
+// Currently can't edit an organization
+/* Would sort polls by already voted. Have those that've been decided
+on separate section */ 
 
 function App() {
   const [web3, setWeb3] = useState();
@@ -124,30 +135,34 @@ function App() {
   }
 
   return (
-    <div> 
+    <Container disableGutters> 
       {/* Is this the correct way to render a redirect? */}
       {redirect}
       
       <NavBar/>
-      
-      <Switch>
-        <Route exact path="/newOrganization">
-          <OrganizationCreate 
-            createOrganization={createOrganization}
-            tokenAddr={accessToken._address}
-          />
-        </Route>
-        <Route exact path="/organizations">
-          <OrganizationList tokenURIs={tokenURIs}/>
-        </Route>
-        <Route path="/organizations/:address">
-          <OrganizationDetails 
-            web3={web3}
-            accessToken={accessToken}
-          />
-        </Route>
-      </Switch>
-    </div>
+        <Box mt={3}>
+          <Container>
+            <Switch>
+              <Route exact path="/newOrganization">
+                <OrganizationCreate 
+                  createOrganization={createOrganization}
+                  tokenAddr={accessToken._address}
+                />
+              </Route>
+              <Route exact path="/organizations">
+                <OrganizationList tokenURIs={tokenURIs}/>
+              </Route>
+              <Route path="/organizations/:address">
+                <OrganizationDetails 
+                  web3={web3}
+                  accessToken={accessToken}
+                />
+              </Route>
+            </Switch>
+
+          </Container>
+        </Box>
+    </Container>
   );
 }
 
