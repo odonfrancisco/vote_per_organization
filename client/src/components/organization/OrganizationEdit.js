@@ -1,3 +1,11 @@
+import Grid from '@material-ui/core/Grid';
+import Box from '@material-ui/core/Box';
+import Typography from '@material-ui/core/Typography';
+import TextField from '@material-ui/core/TextField'
+import Button from '@material-ui/core/Button';
+import IconButton from '@material-ui/core/IconButton';
+import PersonAddIcon from '@material-ui/icons/PersonAdd'
+
 import React, { useState, useContext } from 'react'
 import EditToken from '../EditToken';
 import { OrganizationContext } from './OrganizationDetails';
@@ -16,43 +24,46 @@ export default function OrganizationEdit({ name, approveAddress, changeName }) {
     
     return (
         <div>
-            <input
+            <Box mt={4}/>
+            <TextField
                 type="text"
                 value={editName}
                 onChange={e => setName(e.target.value)}
             />
-            <button
+            <Button
+                variant="contained"
                 onClick={() => {
                     changeName(editName);
                 }}
             >
                 Change Name
-            </button>
-            <br/>
-            <label>
-                Approve an address
-            </label>
-            <input 
+            </Button>
+            <Box m={2}/>
+            <TextField 
+                placeholder="Approve An Address"
                 type="text"
                 value={newAddress}
                 onChange={e => setNewAddress(e.target.value)}
             />
-            <button
+            <IconButton
+                variant="contained"
                 onClick={() => {
                     approveAddress(newAddress)
                     setNewAddress('');
                 }}
             >
-                {/* Use personAddIcon */}
-                Approve
-            </button>
-            {tokenList.map(token => {
-                return (
-                    <div key={token}>
-                        <EditToken token={token}/>
-                    </div>
-                )
-            })}
+                <PersonAddIcon/>
+            </IconButton>
+
+            <Grid container>
+                {tokenList.map(token => {
+                    return (
+                        <Grid item key={token}>
+                            <EditToken token={token}/>
+                        </Grid>
+                    )
+                })}
+            </Grid>
         </div>
     )
 }

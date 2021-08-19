@@ -1,13 +1,18 @@
+import Button from '@material-ui/core/Button';
+import Typography from '@material-ui/core/Typography';
+import DeleteIcon from '@material-ui/icons/Delete'
+import IconButton from '@material-ui/core/IconButton';
+
 import React, { useState, useEffect, useContext } from 'react'
 import { OrganizationContext } from './organization/OrganizationDetails'
 
 export default function EditToken({ token }) {
+    const [tokenRef, setTokenRef] = useState();
     const { 
         getTokenRef,
         removeApprovedVoter,
         updateAdmin
     } = useContext(OrganizationContext);
-    const [tokenRef, setTokenRef] = useState();
     
     useEffect(() => { 
         const init = async () => {
@@ -19,19 +24,22 @@ export default function EditToken({ token }) {
 
     const tokenEditButtons = () => {
         return (
-            <li>
-                <button
+            <div>
+                <IconButton
+                    color="secondary"
+                    variant="contained"
                     onClick={removeApproved}
                 >
-                    Delete
-                </button>
-                <button
+                    <DeleteIcon/>
+                </IconButton>
+                <Button
+                    variant="outlined"
                     onClick={makeAdmin}
                 >
                     Appoint As Admin
-                </button>
+                </Button>
 
-            </li>
+            </div>
         )
     }
 
@@ -49,10 +57,14 @@ export default function EditToken({ token }) {
         <div>
             <ul>
                 <li>
-                    Token ID: {tokenRef.tokenId}
+                    <Typography>
+                        Token ID: {tokenRef.tokenId}
+                    </Typography>
                 </li>
                 <li>
-                    Owner: {tokenRef.owner}
+                    <Typography>
+                        Owner: {tokenRef.owner}
+                    </Typography>
                 </li>
                 {!tokenRef.isAdmin && tokenEditButtons()}
             </ul>

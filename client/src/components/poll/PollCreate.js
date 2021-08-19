@@ -1,4 +1,6 @@
+import Box from '@material-ui/core/Box';
 import TextField from '@material-ui/core/TextField'
+import Typography from '@material-ui/core/Typography';
 import Button from '@material-ui/core/Button';
 import IconButton from '@material-ui/core/IconButton';
 import AddQueue from '@material-ui/icons/AddCircleOutline'
@@ -9,16 +11,75 @@ export default function PollCreate({ createPoll }) {
     const [pollName, setPollName] = useState('');
     const [option, setOption] = useState('');
     const [pollOptions, setPollOptions] = useState([]);
+    const [err, setErr] = useState('');
+
+    const generateErrorMessage = message => {
+        setErr(message);
+        setTimeout(() => {
+            setErr('');
+        }, 2000);
+    }
+    
+    const handleOptionAdd = event => {
+        event.preventDefault();
+        if(pollOptions.length > 4) {
+            generateErrorMessage("Maximum of five options allowed")
+            return;
+        };
+        if(option.length < 1) {
+            generateErrorMessage("Poll option can not be empty");
+            return;
+        }
+        setPollOptions(prevOptions => [...prevOptions, option]);
+        setOption('');
+    }
+
+    const handleOptionDelete = index => {
+        setPollOptions(pollOptions => {
+            return pollOptions.filter((o, i) => (
+                i !== index
+            ))
+        })
+    }
+
+    const handlePollCreate = () => {
+        if(pollName.length < 1 
+            || pollOptions.length < 2 ) {
+                generateErrorMessage("Poll must have a name & at least two options");
+                return;
+            }
+        createPoll(pollName, pollOptions);
+        setPollName('');
+        setOption('');
+        setPollOptions([]);
+    }
+
+    const optionListItem = (option, index) => {
+        const lastElement = index === pollOptions.length - 1;
+        let optionRender = `${option}, `;
+        if(lastElement){
+            optionRender = `${option}`
+        }
+        return (
+            <Button
+                onClick={() => handleOptionDelete(index)}
+            >
+                <Typography>
+                    {optionRender}
+                </Typography>
+            </Button>
+        )
+    }
     
     return (
         <div>
-            <h5>{pollOptions.map((e, i) => {
-                const notLastElement = i < pollOptions.length - 1;
-                if(notLastElement){
-                    return `${e}, `
-                }
-                return `${e}`
-            })}</h5>
+            <Box mt={3}/>
+            <Typography
+                variant="h4"
+            >
+                {pollName}
+            </Typography>
+            <h5>{pollOptions.map(optionListItem)}</h5>
             <br/>
             {/* <label>New Poll </label> */}
             <TextField 
@@ -29,11 +90,7 @@ export default function PollCreate({ createPoll }) {
             />
             <br/>
             <form
-                onSubmit={e => {
-                    e.preventDefault();
-                    setPollOptions(prevOptions => [...prevOptions, option]);
-                    setOption('');
-                }}
+                onSubmit={handleOptionAdd}
             >
                 {/* <label>Poll Options </label> */}
                 <TextField
@@ -44,26 +101,24 @@ export default function PollCreate({ createPoll }) {
                 />
                 <IconButton
                     variant="contained"
-                    onClick={e => {
-                        e.preventDefault();
-                        setPollOptions(prevOptions => [...prevOptions, option]);
-                        setOption('');
-                    }}
+                    onClick={handleOptionAdd}
                 >
                     <AddQueue/>
                 </IconButton>
+                <br/>
+                
+                <Typography
+                    color="error"
+                >
+                    {err}
+                </Typography>
             </form>
 
             <br/>
             
             <Button 
                 variant="contained"
-                onClick={() => {
-                    createPoll(pollName, pollOptions);
-                    setPollName('');
-                    setOption('');
-                    setPollOptions([]);
-                }}>
+                onClick={handlePollCreate}>
                 Submit
             </Button>
         </div>

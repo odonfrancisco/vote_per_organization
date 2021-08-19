@@ -26,23 +26,29 @@ had like 28 different orgs they're a part of) )*/
 that they will need to confirm two transactions in order to become admin
 (would be fixed if using ipfs in conjunction with tokenURI ) */
 // Potentially add name (person name) field to tokenRef
-// Should be able to delete an option entry before submit on PollCreate
 // Change checkHasVoted in pollDetails to use poll.voters instead of contract.hasVoted
 // I feel like i'm not leveraging the emitted contract events 
 // instead of calling getPolls() when someone votes, could just call the individual poll
 // need to disable vote button as soon as someone clicks it until tx is rejected
 // need to refresh app when create a new organization
-/* need to prevent adding an empty option on poll create + limit options to 5
-pus show new poll name on top of options */
-
+// need to disable add button if address string is empty (or until valid address is passed)
+// Toggle to view token ids inside organization edit
+/* For some reason when i was on page for second organization as acct4, 
+and switched to acct3, the page didn't refresh. but then after switching to a
+diff account, it refreshed. so it refreshes after two acct changes. fucking weird */
+// Fix navbar float feature
 
 // feature creep
 // could add a function so that poll will automatically decide itself in x amount of time
 // // or adding a button for admin to decide a poll
 // prevent admin from creating a second poll with the same name
 // Currently can't edit an organization
-/* Would sort polls by already voted. Have those that've been decided
+/* Would sort polls by already decided. Have those that've been decided
 on separate section */ 
+/* Make 'Happy Voting' on header take you to a random organization (tht u own)
+when clicked */
+// Show result per option on decided
+
 
 function App() {
   const [web3, setWeb3] = useState();

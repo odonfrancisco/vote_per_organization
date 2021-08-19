@@ -271,9 +271,8 @@ contract VotingContract {
     /* Should I require that a valid Poll ID is passed? 
     Would be redundant since vote() (the function that calls this)
     already checks for a valid pollId  */
-    // Need to handle draws.
-    /* On draw, I think i should reset poll, but only with the top options
-    (if 3 options got highest vote, then those three options remain, rest leave) */
+    /* ^ I should require valid Poll ID if i ever decide to make poll
+    self-decide at a particular time frame */
     function decideResult(uint pollId) internal returns(bool) {
         Poll storage p = polls[pollId];
         // Not sure if i should use a require, or the IF statement as I currently am
