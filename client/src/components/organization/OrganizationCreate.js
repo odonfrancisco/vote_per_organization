@@ -9,6 +9,7 @@ import React, { useState } from 'react'
 export default function OrganizationCreate({ 
     createOrganization }) {
         const [name, setName] = useState('');
+        const [buttonDisabled, setButtonDisabled] = useState(false);
 
         return (
             <div>
@@ -31,8 +32,12 @@ export default function OrganizationCreate({
                             variant="contained"
                             color="primary"
                             endIcon={<SendIcon/>}
-                            onClick={() => {
-                                createOrganization(name);
+                            {...{disabled: buttonDisabled}}
+                            onClick={async () => {
+                                setButtonDisabled(true);
+                                if(!(await createOrganization(name))){
+                                    setButtonDisabled(false);
+                                }
                             }}
                         >
                             Create

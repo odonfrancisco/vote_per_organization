@@ -162,9 +162,9 @@ contract VotingContract {
         // checks if unapproved has an access token
         int tokenId = getTokenId(unapproved);
 
-        require(tokenId > 0, "Cannot remove a non-existing token");
+        require(approvedTokens[uint(tokenId)].owner != address(0), 
+            "Cannot remove a non-existing token");
 
-        accessToken.burn(uint(tokenId));
 
         uint tokenIndex;
         for(uint i = 0; i < tokenIds.length; i++){
@@ -176,6 +176,7 @@ contract VotingContract {
         tokenIds.pop();
 
         delete approvedTokens[uint(tokenId)];
+        accessToken.burn(uint(tokenId));
     }
 
     /* This updates who is the current admin. there may only be 

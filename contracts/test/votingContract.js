@@ -42,7 +42,7 @@ contract("VotingContract", (accounts) => {
     it("should generate access token correctly", async () => {
         const numTokens = (await vc.getTokenIds()).length;
         const tx = await vc.generateAccessToken(
-          account2, vc.address, {from: account1});
+          accounts[5], vc.address, {from: account1});
         const tokenId = tx.receipt.logs[0].args[0].words[0];
         const tokenOwner = tx.receipt.logs[0].args[1];
         const tokenURI = tx.receipt.logs[0].args[2];
@@ -54,7 +54,7 @@ contract("VotingContract", (accounts) => {
         assert(await tokenRef.tokenId.toString() 
           === tokenId.toString(),
           "VC TokenRef.tokenId not saved correctly");
-        assert(tokenOwner === account2,
+        assert(tokenOwner === accounts[5],
           "Token owner not saved correctly");
         assert(tokenURI === vc.address,
           "TokenURI not saved correctly");        
@@ -192,7 +192,7 @@ contract("VotingContract", (accounts) => {
     it("Does NOT replace admin if newAdmin is not already an approved user", async () => {
         // In an earlier test, account2 became admin
         await expectRevert(
-            vc.updateAdmin(account3, {from: account2}),
+            vc.updateAdmin(accounts[6], {from: account2}),
             "New admin must have an access token"
         );
     })

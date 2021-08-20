@@ -12,19 +12,51 @@ import { OrganizationContext } from './OrganizationDetails';
 
 export default function OrganizationEdit({ name, approveAddress, changeName }) {
     const [editName, setName] = useState(name);
-    // const [editTokenList, setTokenList] = useState(tokenList);
+    const [showTokenList, setShowTokenList] = useState(false);
     const [newAddress, setNewAddress] = useState('');
-    const { tokenList } = useContext(OrganizationContext);
-    
+    const [err, setErr] = useState('');
+    const { tokenList, checkValidAddress } = useContext(OrganizationContext);
+
     // Edit token access. delete, generate, appointAdmin
     // // want to add a popup when click 'appoint admin' so user is SURE
     // // they want to give up admin rights
     /* could potentially add a feature to let admin specify a name
     per approved address */
+
+    const generateErrorMessage = message => {
+        setErr(message);
+        setTimeout(() => {
+            setErr('');
+        }, 3000);
+    }
+
+    const handleAddressApproval = () => {
+        if(newAddress.length < 1) {
+            generateErrorMessage("Address Field must not be empty");
+            return;
+        }
+        if(!checkValidAddress(newAddress)){
+            generateErrorMessage("Must pass a valid address");
+            return;
+        }
+        approveAddress(newAddress)
+        setNewAddress('');
+    }
+
+    const TokenList = () => (
+        tokenList.map(token => {
+            return (
+                <Grid item key={token}>
+                    <EditToken token={token}/>
+                </Grid>
+            )
+        })
+    )
     
     return (
         <div>
             <Box mt={4}/>
+            <hr/>
             <TextField
                 type="text"
                 value={editName}
@@ -33,6 +65,10 @@ export default function OrganizationEdit({ name, approveAddress, changeName }) {
             <Button
                 variant="contained"
                 onClick={() => {
+                    if(editName.length < 1){
+                        generateErrorMessage("Name must not be empty");
+                        return;
+                    }
                     changeName(editName);
                 }}
             >
@@ -47,23 +83,32 @@ export default function OrganizationEdit({ name, approveAddress, changeName }) {
             />
             <IconButton
                 variant="contained"
-                onClick={() => {
-                    approveAddress(newAddress)
-                    setNewAddress('');
-                }}
+                onClick={handleAddressApproval}
             >
                 <PersonAddIcon/>
             </IconButton>
+            <Typography
+                color="error"
+            >
+                {err}
+            </Typography>
 
             <Grid container>
-                {tokenList.map(token => {
-                    return (
-                        <Grid item key={token}>
-                            <EditToken token={token}/>
-                        </Grid>
-                    )
-                })}
+                <Grid xl={12} sm={12} item>
+                    <Button
+                        onClick={() => {
+                            setShowTokenList(bool => !bool);
+                        }}
+                    >
+                        {showTokenList ? 'Hide Token List' : 'Show Token List'}
+                    </Button>
+
+                </Grid>
+                {showTokenList &&
+                    <TokenList/>
+                }
             </Grid>
+            <hr/>
         </div>
     )
 }

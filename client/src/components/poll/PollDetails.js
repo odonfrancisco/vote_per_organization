@@ -29,7 +29,7 @@ export default function PollDetails({ poll }) {
             setHasVoted(hasVoted);
         }
         init();
-    })
+    }, [])
 
     const EditPollButton = () => {
         return(
@@ -60,7 +60,7 @@ export default function PollDetails({ poll }) {
     }
 
     const ShowOptions = () => {
-        const disabled = {
+        let disabled = {
             disabled: hasVoted
         }
         return(
@@ -69,8 +69,11 @@ export default function PollDetails({ poll }) {
                     <Button
                         key={i}
                         variant="outlined"
-                        onClick={() => {
-                            submitVote(poll.id, i);
+                        onClick={async () => {
+                            setHasVoted(true);
+                            if(!(await submitVote(poll.id, i))){
+                                setHasVoted(false);
+                            }
                         }}
                         {...disabled}
                     >

@@ -2,11 +2,12 @@ import Grid from '@material-ui/core/Grid';
 import Box from '@material-ui/core/Box';
 import Typography from '@material-ui/core/Typography';
 
-import React from 'react'
+import React, { useEffect } from 'react'
 import PollDetails from './PollDetails'
 import PollDecided from './PollDecided'
 
 export default function PollList({ polls }) {    
+
     return (
         <Grid 
             container

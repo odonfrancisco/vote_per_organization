@@ -77,10 +77,16 @@ export default function OrganizationDetails({ web3, accessToken }) {
     const changeName = async newName => {
         const tx = await votingContract.methods
             .changeName(newName)
-            .send({from: currentAddress});
-        const name = await votingContract.methods.name().call();
-        // not sure if this will refresh everything i need. actually i think it will. let's check
-        setName(name);
+            .send({from: currentAddress})
+            .then(async () => {
+                /* shouldn't i be returning the new votingContract name 
+                from .then() instead of calling for methods.name()? */
+                const name = await votingContract.methods.name().call({from: currentAddress});
+                setName(name);        
+            })
+            .catch(err => {
+                console.error(err);
+            })
     }
     
     const approveAddress = async newAddress => {
@@ -89,27 +95,44 @@ export default function OrganizationDetails({ web3, accessToken }) {
             contract as string and pass to accessToken in order to save address
             as tokenURI */
             .generateAccessToken(newAddress, contractAddr)
-            .send({from: currentAddress});
-        const tokenList = await votingContract.methods.getTokenIds().call();
-        setTokenList(tokenList);
+            .send({from: currentAddress})
+            .then(async () => {
+                // should i add {from: currentAddress} inside call()?
+                const tokenList = await votingContract.methods.getTokenIds().call();
+                setTokenList(tokenList);        
+            })
+            .catch(err => {
+                console.error(err);
+            })
         // Need to somehow add the accessToken to users' metamask. not sure how yet
+        // ^ Will do this on app.js useEffect
     }
 
     const removeApprovedVoter = async unapprovedVoter => {
         const tx = await votingContract.methods
             .removeApprovedVoter(unapprovedVoter)
             .send({from: currentAddress})
-        const tokenList = await votingContract.methods.getTokenIds().call();
-        setTokenList(tokenList);
+            .then(async () => {
+                const tokenList = await votingContract.methods.getTokenIds().call();
+                setTokenList(tokenList);        
+            })
+            .catch(err => {
+                console.error(err);
+            })
     }
 
     const updateAdmin = async newAdmin => {
         await votingContract.methods
             .updateAdmin(newAdmin)
             .send({from: currentAddress})
-        /* How i decided to refresh the whole page when admin is updated.
-        it works well but i wonder if there's a better way to accomplish this */
-        setRefresh(refresh => !refresh);
+            .then(() => {
+                /* How i decided to refresh the whole page when admin is updated.
+                it works well but i wonder if there's a better way to accomplish this */
+                setRefresh(refresh => !refresh);
+            })
+            .catch(err => {
+                console.error(err);
+            })
     }
 
     const createPoll = async (newName, options) => {
@@ -118,12 +141,20 @@ export default function OrganizationDetails({ web3, accessToken }) {
 
         const tx = await votingContract.methods
             .createPoll(newName, options)
-            .send({from: currentAddress});
-        // If tx.events.PollCreated, then poll was created successfully
-        // Need to handle event if not generate correctly
-        const polls = await votingContract.methods.getPolls().call();
-        setPolls(polls);
-        setCreateNewPoll(false);
+            .send({from: currentAddress})
+            .then(async event => {
+                votingContract.methods.getPolls().call({from: currentAddress})
+                    .then(polls => {
+                        setPolls(polls);
+                        setCreateNewPoll(false);                
+                    })
+                    .catch(err => {
+                        console.error(err);
+                    });
+            })
+            .catch(err => {
+                console.error(err);
+            });
     }
 
     /* am NOT handling errors correctly. definitely need to test
@@ -131,17 +162,40 @@ export default function OrganizationDetails({ web3, accessToken }) {
     const deletePoll = async pollId => {
         await votingContract.methods
             .deletePoll(pollId)
-            .send({from: currentAddress});
-        const polls = await votingContract.methods.getPolls().call();
-        setPolls(polls);
+            .send({from: currentAddress})
+            .then(async () => {
+                const polls = await votingContract.methods.getPolls().call({from: currentAddress});
+                setPolls(polls);        
+            })
+            .catch(err => {
+                console.error(err);
+            })
     }
 
     const submitVote = async (pollId, optionId) => {
+        let success = false;
         await votingContract.methods
             .vote(pollId, optionId)
-            .send({from: currentAddress});
-        const polls = await votingContract.methods.getPolls().call();
-        setPolls(polls);
+            .send({from: currentAddress})
+            .then(() => {
+                success = true;
+            })
+            .catch(err => {
+                console.error(err);
+            });
+        if(!success) {
+            return success;
+        }
+        /* Feel like i should either be receiving poll list/ individual poll
+        from vc.vote(), instead of calling vc.methods inside of .then() */
+        await votingContract.methods.getPolls().call({from: currentAddress})
+            .then(polls => {
+                setPolls(polls);
+            })
+            .catch(err => {
+                console.error(err);
+            });
+        return success;
     }
 
     const PollCreationButton = () => {
@@ -192,7 +246,8 @@ export default function OrganizationDetails({ web3, accessToken }) {
         deletePoll,
         submitVote,
         checkHasVoted,
-        currentAddress
+        currentAddress,
+        checkValidAddress: web3.utils.isAddress
     }
     
     return (

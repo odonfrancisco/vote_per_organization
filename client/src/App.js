@@ -25,18 +25,10 @@ had like 28 different orgs they're a part of) )*/
 /* Add popup when creating org to give user heads up 
 that they will need to confirm two transactions in order to become admin
 (would be fixed if using ipfs in conjunction with tokenURI ) */
-// Potentially add name (person name) field to tokenRef
 // Change checkHasVoted in pollDetails to use poll.voters instead of contract.hasVoted
-// I feel like i'm not leveraging the emitted contract events 
 // instead of calling getPolls() when someone votes, could just call the individual poll
-// need to disable vote button as soon as someone clicks it until tx is rejected
-// need to refresh app when create a new organization
-// need to disable add button if address string is empty (or until valid address is passed)
-// Toggle to view token ids inside organization edit
-/* For some reason when i was on page for second organization as acct4, 
-and switched to acct3, the page didn't refresh. but then after switching to a
-diff account, it refreshed. so it refreshes after two acct changes. fucking weird */
 // Fix navbar float feature
+// set accessTokenID to a real ID instead of its index. idk if necessary tbh
 
 // feature creep
 // could add a function so that poll will automatically decide itself in x amount of time
@@ -48,6 +40,9 @@ on separate section */
 /* Make 'Happy Voting' on header take you to a random organization (tht u own)
 when clicked */
 // Show result per option on decided
+// show message when user votes on poll and it resets, explaining that poll ended in a draw
+// Potentially add name (person name) field to tokenRef
+// I feel like i'm not leveraging the emitted contract events 
 
 
 function App() {
@@ -78,6 +73,13 @@ function App() {
   // this refreshes the page anytime user changes accounts
   useEffect(() => {
     window.ethereum.on("accountsChanged", () => {
+      /* When on a particular organization page, and changed accounts
+      to one that also has just one org, i would get a 'must have access
+      token to perform this action' error, so i added this redirect
+      to avoid that error from happening */
+      setRedirect(<Redirect to={{
+        pathname: `/`
+      }}/>);
       setRefresh(refresh => !refresh);
     })
     return(() => window.ethereum.removeAllListeners());
@@ -104,8 +106,7 @@ function App() {
 
       setTokenURIs(userTokenURIs);
       
-      // using == because accessToken.balanceOf returns a string
-      if(balanceOfUser == 1){
+      if(balanceOfUser === '1'){
         setRedirect(<Redirect to={{
           pathname: `/organizations/${userTokenURIs[0]}`
         }}/>);
@@ -117,8 +118,19 @@ function App() {
   }
 
   const createOrganization = async name => {
-    await createVotingContract(name, selectedAddress, web3, accessToken._address);
-    setRefresh(refresh => !refresh);
+    let success = false;
+    await createVotingContract(name, selectedAddress, web3, accessToken._address)
+      .then(() => {
+        setRedirect(<Redirect to={{
+          pathname: `/`
+        }}/>);
+        setRefresh(refresh => !refresh);    
+        success = true;
+      })
+      .catch(err => {
+        console.error(err);
+      })
+    return success;
   }
 
   if(!web3) {

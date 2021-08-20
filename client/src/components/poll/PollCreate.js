@@ -17,7 +17,7 @@ export default function PollCreate({ createPoll }) {
         setErr(message);
         setTimeout(() => {
             setErr('');
-        }, 2000);
+        }, 3000);
     }
     
     const handleOptionAdd = event => {
@@ -74,6 +74,7 @@ export default function PollCreate({ createPoll }) {
     return (
         <div>
             <Box mt={3}/>
+            <hr/>
             <Typography
                 variant="h4"
             >
@@ -121,6 +122,7 @@ export default function PollCreate({ createPoll }) {
                 onClick={handlePollCreate}>
                 Submit
             </Button>
+            <hr/>
         </div>
     )
 }

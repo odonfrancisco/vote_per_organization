@@ -7,26 +7,36 @@ const getVotingContract = async (web3, contractAddr) => {
     )
 }
 
-const createVotingContract = async (name, currentAddress, web3, tokenAddr) => {
-    const contract = await new web3.eth.Contract(
-        VotingContract.abi
-    )
-    contract.deploy({
-        data: VotingContract.bytecode,
-        arguments: [name, tokenAddr]
+const createVotingContract = (name, currentAddress, web3, tokenAddr) => {
+    return new Promise( async (resolve, reject) => {
+        const contract = await new web3.eth.Contract(
+            VotingContract.abi
+        )
+        contract
+            .deploy({
+                data: VotingContract.bytecode,
+                arguments: [name, tokenAddr]
+            })
+            .send({
+                from: currentAddress
+            })
+            .then(async deployedContract => {
+                await deployedContract.methods
+                    .generateAdmin(deployedContract.options.address)
+                    .send({from: currentAddress})
+                    .then(() => {
+                        resolve(true);
+                    })
+                    .catch((err) => {
+                        console.error(err)
+                        reject(false);
+                    })
+            })
+            .catch(err => {
+                console.error(err);
+                reject(false);
+            })    
     })
-    .send({
-        from: currentAddress
-    })
-    .then(async deployedContract => {
-        await deployedContract.methods
-            .generateAdmin(deployedContract.options.address)
-            .send({from: currentAddress});
-    })
-    .catch(err => {
-        console.error(err);
-    })
-
 }
 
 export { getVotingContract, createVotingContract };
