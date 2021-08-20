@@ -32,5 +32,23 @@ const requestAccounts = async () => {
     return acctArray[0];
 }
 
+const addTokenToWallet = tokenAddr => {    
+    window.ethereum
+        .request({
+        method: 'wallet_watchAsset',
+        params: {
+            type: 'ERC20',
+            options: {
+                address: tokenAddr,
+                symbol: 'ACTK',
+                decimals: 0,
+                // image: ''
+            },
+        },
+        })
+        .catch(err => {
+        console.error(err);
+        })
+}
 
-export {getWeb3, requestAccounts};
+export {getWeb3, requestAccounts, addTokenToWallet};

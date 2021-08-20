@@ -1,13 +1,17 @@
+// Styling
 import Button from '@material-ui/core/Button';
 import Typography from '@material-ui/core/Typography';
 import Grid from '@material-ui/core/Grid';
-
+// React
 import React, { useState, useEffect } from 'react'
 import { useParams } from 'react-router'
+// Web3 utility functions
 import { getVotingContract } from '../../utils/votingContract';
+import { addTokenToWallet } from '../../utils/getWeb3';
+// Components
+import OrganizationEdit from './OrganizationEdit';
 import PollList from '../poll/PollList';
 import PollCreate from '../poll/PollCreate';
-import OrganizationEdit from './OrganizationEdit';
 
 export const OrganizationContext = React.createContext();
 
@@ -52,7 +56,7 @@ export default function OrganizationDetails({ web3, accessToken }) {
         when App.js refreshes. Not sure i like this method but it works
         for now. */
     }, [refresh, web3])
-
+    
     const getCurrentToken = async currentAddress => {
         // const currentAddress = web3.currentProvider.selectedAddress;
         const balanceOf = await accessToken.methods.balanceOf(currentAddress).call();
@@ -60,7 +64,7 @@ export default function OrganizationDetails({ web3, accessToken }) {
         for(let i = 0; i < balanceOf; i++){
             const currentTokenId = await accessToken.methods.tokenOfOwnerByIndex(currentAddress, i).call();
             const tokenURI = await accessToken.methods.tokenURI(currentTokenId).call();
-            if(tokenURI == contractAddr){
+            if(tokenURI === contractAddr){
                 tokenId = currentTokenId;
             }
         }
@@ -68,9 +72,7 @@ export default function OrganizationDetails({ web3, accessToken }) {
     }
 
     const checkHasVoted = async pollId => {
-        const hasVoted = await votingContract.methods
-            .hasVoted(tokenId, pollId)
-            .call()
+        const hasVoted = polls[pollId].voters.includes(tokenId);
         return hasVoted;
     }
 
@@ -186,10 +188,16 @@ export default function OrganizationDetails({ web3, accessToken }) {
         if(!success) {
             return success;
         }
-        /* Feel like i should either be receiving poll list/ individual poll
-        from vc.vote(), instead of calling vc.methods inside of .then() */
+        /* Feel like i should either be receiving poll list/individual poll
+        from vc.vote().then(), instead of calling vc.getPolls() after vote() */
         await votingContract.methods.getPolls().call({from: currentAddress})
             .then(polls => {
+                /* This is to handle the case in which the poll ends in a draw.
+                if ends in draw, should automatically re-enable the vote buttons 
+                for user who made poll end in a tie. */
+                if(polls[pollId].result === '-1' && polls[pollId].voters.length === 0){
+                    success = false;
+                }
                 setPolls(polls);
             })
             .catch(err => {
@@ -253,7 +261,22 @@ export default function OrganizationDetails({ web3, accessToken }) {
     return (
         <OrganizationContext.Provider value={orgContextValue}>
             <div>
-                <Typography variant="h3">{name}</Typography>
+                <Grid container justifyContent="space-between">
+                    <Grid item>
+                        <Typography variant="h3">{name}</Typography>
+                    </Grid>
+                    <Grid item>
+                        <Button
+                            onClick={() => {
+                                addTokenToWallet(accessToken._address);
+                            }}
+                        >
+                            <Typography>
+                                Add Token To Wallet
+                            </Typography>
+                        </Button>
+                    </Grid>
+                </Grid>
                 <Grid container spacing={2}>
                     <Grid item>
                         {isAdmin && <PollCreationButton/>}

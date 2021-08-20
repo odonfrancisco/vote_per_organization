@@ -1,9 +1,12 @@
+// Styling imports
 import './css/App.css';
 import Container from '@material-ui/core/Container';
 import Box from '@material-ui/core/Box';
-
+// React
 import React, { useState, useEffect } from 'react';
+import { Switch, Route, Redirect } from 'react-router-dom';
 // Web3 utility functions
+import getAccessToken from './utils/getTokenContract';
 import { getWeb3, requestAccounts } from './utils/getWeb3';
 import { createVotingContract } from './utils/votingContract';
 // Components
@@ -11,38 +14,33 @@ import OrganizationDetails from './components/organization/OrganizationDetails';
 import OrganizationList from './components/organization/OrganizationList';
 import OrganizationCreate from './components/organization/OrganizationCreate';
 import NavBar from './components/NavBar';
-// Redirect library
-import { Switch, Route, Redirect } from 'react-router-dom';
-
-import getAccessToken from './utils/getTokenContract';
 
 // tasks
-// Add ACTK to user's wallet
 /* Store tokenURI org name in browser localstorage as temporary fix 
 to not having org name saved to tokenURI (and so as to not be 
 calling new web3.contract per item in list (would be fucking nuts if someone 
 had like 28 different orgs they're a part of) )*/ 
-/* Add popup when creating org to give user heads up 
-that they will need to confirm two transactions in order to become admin
-(would be fixed if using ipfs in conjunction with tokenURI ) */
-// Change checkHasVoted in pollDetails to use poll.voters instead of contract.hasVoted
-// instead of calling getPolls() when someone votes, could just call the individual poll
 // Fix navbar float feature
-// set accessTokenID to a real ID instead of its index. idk if necessary tbh
 
 // feature creep
 // could add a function so that poll will automatically decide itself in x amount of time
 // // or adding a button for admin to decide a poll
 // prevent admin from creating a second poll with the same name
-// Currently can't edit an organization
 /* Would sort polls by already decided. Have those that've been decided
 on separate section */ 
 /* Make 'Happy Voting' on header take you to a random organization (tht u own)
 when clicked */
 // Show result per option on decided
 // show message when user votes on poll and it resets, explaining that poll ended in a draw
-// Potentially add name (person name) field to tokenRef
 // I feel like i'm not leveraging the emitted contract events 
+/* could potentially add a feature to let admin specify a name
+per approved address */
+/* ERC721 not supported by wallet_watchAsset just yet, so currently
+adding accesstoken to user wallet as an erc20 token */
+// set accessTokenID to a real ID instead of its index. something like uuid
+/* When creating org, the popup explaining the need to confirm two
+transactions would be unecessary if using ipfs in conjunction with tokenURI */
+
 
 
 function App() {

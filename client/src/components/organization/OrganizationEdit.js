@@ -20,8 +20,6 @@ export default function OrganizationEdit({ name, approveAddress, changeName }) {
     // Edit token access. delete, generate, appointAdmin
     // // want to add a popup when click 'appoint admin' so user is SURE
     // // they want to give up admin rights
-    /* could potentially add a feature to let admin specify a name
-    per approved address */
 
     const generateErrorMessage = message => {
         setErr(message);

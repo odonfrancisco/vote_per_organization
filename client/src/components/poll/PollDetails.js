@@ -1,5 +1,4 @@
 import Typography from '@material-ui/core/Typography';
-import ButtonGroup from '@material-ui/core/ButtonGroup';
 import Grid from '@material-ui/core/Grid';
 import Button from '@material-ui/core/Button';
 import { ThemeProvider, createTheme, responsiveFontSizes } from '@material-ui/core/styles';
@@ -98,8 +97,7 @@ export default function PollDetails({ poll }) {
             <Grid
                 container
                 direction="column"
-                // justifyContent="center"
-                rowSpacing={1}
+                rowspacing={1}
             > 
                 { <ShowOptions/> } 
             </Grid>

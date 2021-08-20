@@ -3,7 +3,6 @@ import IconButton from '@material-ui/core/IconButton';
 import Typography from '@material-ui/core/Typography';
 import Grid from '@material-ui/core/Grid';
 import { ThemeProvider, createTheme } from '@material-ui/core/styles';
-import { grey } from '@material-ui/core/colors';
 
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import FormatListBulletedIcon from '@material-ui/icons/FormatListBulleted';
@@ -27,7 +26,7 @@ export default function NavBar() {
                 position="relative" 
                 color="secondary"
             >
-                <Grid container alignItems="center" justify="flex-end"> 
+                <Grid container alignItems="center" justifyContent="flex-end"> 
                     <Grid item xs>
                         <IconButton>
                             <Typography variant="h4">
