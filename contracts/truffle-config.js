@@ -25,6 +25,16 @@ module.exports = {
           4
         ),
       network_id: 42
+    },
+    rinkeby: {
+      provider: () => 
+        new provider(
+          secrets.privateKeys,
+          "https://rinkeby.infura.io/v3/481a67d9cd27407c8c165d9291ab9229",
+          0,
+          4
+        ),
+      network_id: 4
     }
   },
 

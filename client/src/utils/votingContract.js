@@ -1,4 +1,5 @@
 import VotingContract from '../contracts/VotingContract.json';
+import Web3 from 'web3';
 
 const getVotingContract = async (web3, contractAddr) => {
     return new web3.eth.Contract(
@@ -10,7 +11,8 @@ const getVotingContract = async (web3, contractAddr) => {
 const createVotingContract = (name, currentAddress, web3, tokenAddr) => {
     return new Promise( async (resolve, reject) => {
         const contract = await new web3.eth.Contract(
-            VotingContract.abi
+            VotingContract.abi,
+        
         )
         contract
             .deploy({

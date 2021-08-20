@@ -112,7 +112,7 @@ export default function OrganizationCreate({
                 <Grid 
                     container 
                     spacing={1} 
-                    justify="center"
+                    justifyContent="center"
                 >
                     <Grid item>
                         <TextField

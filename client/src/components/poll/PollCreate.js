@@ -63,6 +63,7 @@ export default function PollCreate({ createPoll }) {
         return (
             <Button
                 onClick={() => handleOptionDelete(index)}
+                key={index}
             >
                 <Typography>
                     {optionRender}

@@ -6,7 +6,9 @@ const getWeb3 = async () => {
     const provider = await detectEthereumProvider();
     if(provider) {
         try{
-            const web3 = new Web3(window.ethereum);
+            const web3 = new Web3(Web3.givenProvider || 'http://localhost:8545');
+            // console.log("WEB3");
+            // console.log(web3);
             return web3;
         } catch(err) {
             // Don't think i'm properly error-handling here
