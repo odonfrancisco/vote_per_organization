@@ -1,4 +1,5 @@
 import AppBar from '@material-ui/core/AppBar';
+import Box from '@material-ui/core/Box';
 import IconButton from '@material-ui/core/IconButton';
 import Typography from '@material-ui/core/Typography';
 import Grid from '@material-ui/core/Grid';
@@ -23,16 +24,17 @@ export default function NavBar() {
     return (
         <ThemeProvider theme={theme}>
             <AppBar 
-                position="relative" 
                 color="secondary"
             >
                 <Grid container alignItems="center" justifyContent="flex-end"> 
                     <Grid item xs>
-                        <IconButton>
-                            <Typography variant="h4">
+                        <Box ml={3}>
+                            <Typography variant="h4" style={{
+                                color: '#eeeeee'
+                            }}>
                                 Happy Voting!
                             </Typography>
-                        </IconButton>
+                        </Box>
                     </Grid>
                     <Grid item xs={3}>
                         <IconButton>
@@ -40,7 +42,7 @@ export default function NavBar() {
                                 to="/newOrganization"
                                 style={{
                                     textDecoration: 'none',
-                                    color: 'white'
+                                    color: '#eeeeee'
                                 }}
                             >
                                 <AddCircleIcon/>
@@ -54,7 +56,10 @@ export default function NavBar() {
                         <IconButton>
                             <NavLink
                                 to="/organizations"
-                                style={{textDecoration: 'none'}}
+                                style={{
+                                    textDecoration: 'none',
+                                    color: '#eeeeee'
+                                }}
                             >
                                 <FormatListBulletedIcon/>
                                 <Typography>

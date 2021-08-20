@@ -102,8 +102,7 @@ export default function OrganizationCreate({
         )
 
         return (
-            <div>
-                <Box mt={13}/>
+            <Box pt={8}>
                 <Modal
                     open={modalOpen}
                     onClose={handleModalClose}
@@ -146,7 +145,7 @@ export default function OrganizationCreate({
                     </Grid>
                 </Grid>
 
-            </div>
+            </Box>
 
         )
 }

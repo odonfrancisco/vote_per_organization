@@ -15,6 +15,8 @@ import PollCreate from '../poll/PollCreate';
 
 export const OrganizationContext = React.createContext();
 
+const LOCAL_STORAGE_KEY = 'vote_per_org.';
+
 export default function OrganizationDetails({ web3, accessToken }) {
     const [votingContract, setVotingContract] = useState();
     const [name, setName] = useState();
@@ -50,6 +52,7 @@ export default function OrganizationDetails({ web3, accessToken }) {
             setTokenId(tokenId);
             setTokenList(tokenList);
             setIsAdmin(tokenRef.isAdmin);
+            localStorage.setItem(LOCAL_STORAGE_KEY + contractAddr, name);
         }
         init();
         /* Adding web3 here because need to refresh this component

@@ -1,4 +1,11 @@
 const path = require('path');
+const provider = require('@truffle/hdwallet-provider');
+const fs = require('fs');
+const secrets = JSON.parse(
+  fs.readFileSync('.secrets.json').toString().trim()
+);
+
+
 module.exports = {
   // Configure build to go to client side of app
   contracts_build_directory: path.join(__dirname, "../client/src/contracts"),
@@ -9,6 +16,16 @@ module.exports = {
      port: 8545,
      network_id: "*",
     },
+    kovan: {
+      provider: () => 
+        new provider(
+          secrets.privateKeys,
+          "https://kovan.infura.io/v3/481a67d9cd27407c8c165d9291ab9229",
+          0,
+          4
+        ),
+      network_id: 42
+    }
   },
 
   // Configure your compilers

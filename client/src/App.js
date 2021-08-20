@@ -15,13 +15,6 @@ import OrganizationList from './components/organization/OrganizationList';
 import OrganizationCreate from './components/organization/OrganizationCreate';
 import NavBar from './components/NavBar';
 
-// tasks
-/* Store tokenURI org name in browser localstorage as temporary fix 
-to not having org name saved to tokenURI (and so as to not be 
-calling new web3.contract per item in list (would be fucking nuts if someone 
-had like 28 different orgs they're a part of) )*/ 
-// Fix navbar float feature
-
 // feature creep
 // could add a function so that poll will automatically decide itself in x amount of time
 // // or adding a button for admin to decide a poll
@@ -40,7 +33,8 @@ adding accesstoken to user wallet as an erc20 token */
 // set accessTokenID to a real ID instead of its index. something like uuid
 /* When creating org, the popup explaining the need to confirm two
 transactions would be unecessary if using ipfs in conjunction with tokenURI */
-
+/* Storing tokenURI org name in browser localstorage as fix 
+to not having org name saved inside tokenURI */ 
 
 
 function App() {
@@ -156,28 +150,28 @@ function App() {
       {redirect}
       
       <NavBar/>
-        <Box mt={3}>
-          <Container>
-            <Switch>
-              <Route exact path="/newOrganization">
-                <OrganizationCreate 
-                  createOrganization={createOrganization}
-                  tokenAddr={accessToken._address}
-                />
-              </Route>
-              <Route exact path="/organizations">
-                <OrganizationList tokenURIs={tokenURIs}/>
-              </Route>
-              <Route path="/organizations/:address">
-                <OrganizationDetails 
-                  web3={web3}
-                  accessToken={accessToken}
-                />
-              </Route>
-            </Switch>
+      <Box mt={13}>
+        <Container>
+          <Switch>
+            <Route exact path="/newOrganization">
+              <OrganizationCreate 
+                createOrganization={createOrganization}
+                tokenAddr={accessToken._address}
+              />
+            </Route>
+            <Route exact path="/organizations">
+              <OrganizationList tokenURIs={tokenURIs}/>
+            </Route>
+            <Route path="/organizations/:address">
+              <OrganizationDetails 
+                web3={web3}
+                accessToken={accessToken}
+              />
+            </Route>
+          </Switch>
 
-          </Container>
-        </Box>
+        </Container>
+      </Box>
     </Container>
   );
 }
