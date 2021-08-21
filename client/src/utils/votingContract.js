@@ -12,7 +12,6 @@ const createVotingContract = (name, currentAddress, web3, tokenAddr) => {
     return new Promise( async (resolve, reject) => {
         const contract = await new web3.eth.Contract(
             VotingContract.abi,
-        
         )
         contract
             .deploy({

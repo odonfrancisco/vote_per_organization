@@ -42,12 +42,13 @@ export default function OrganizationCreate({
     createOrganization }) {
         const [name, setName] = useState('');
         const [buttonDisabled, setButtonDisabled] = useState(true);
+        const [modalButtonDisabled, setModalButtonDisabled] = useState(false);
         const [modalOpen, setModalOpen] = useState(false);
         const [modalStyle] = useState(getModalStyle);
         const classes = useStyles();
         
         const handleOrganizationCreate = async () => {
-            setButtonDisabled(true);
+            setModalButtonDisabled(true);
             // setModalOpen(false);
             /* Redundant check for valid name length.
             although the way it's currently set up, this
@@ -55,6 +56,7 @@ export default function OrganizationCreate({
             if(name.length < 1) return;
             if(!(await createOrganization(name))){
                 setButtonDisabled(false);
+                setModalButtonDisabled(false);
             }
         }
         
@@ -86,6 +88,7 @@ export default function OrganizationCreate({
                         <Button
                             variant="contained"
                             onClick={handleOrganizationCreate}
+                            {...{disabled: modalButtonDisabled}}
                         >
                             <b>{name}</b>
                         </Button>

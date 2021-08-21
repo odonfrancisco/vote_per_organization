@@ -48,7 +48,7 @@ function App() {
   useEffect(() => {
     const init = async () => {
       const web3 = await getWeb3();
-      const acctArray = await window.ethereum.request({method: 'eth_accounts'});
+      const acctArray = await window.ethereum.request({method: "eth_accounts"});
       const currentAddress = acctArray[0];
       const accessToken = await getAccessToken(web3);
 
@@ -72,6 +72,7 @@ function App() {
       setRedirect(<Redirect to={{
         pathname: `/`
       }}/>);
+      window.location.reload();
       setRefresh(refresh => !refresh);
     })
     return(() => window.ethereum.removeAllListeners());
@@ -80,8 +81,12 @@ function App() {
   const connectEth = async (
     currentAddress,
     accessTokenRef = accessToken) => {
-      setSelectedAddress(await requestAccounts());
-      checkIfUserAccess(accessTokenRef, currentAddress || await requestAccounts());
+      let userAddress = currentAddress;
+      if(!userAddress){
+        userAddress = await requestAccounts();
+      }
+      setSelectedAddress(userAddress);
+      checkIfUserAccess(accessTokenRef, userAddress || await requestAccounts());
   }
 
   const checkIfUserAccess = async (

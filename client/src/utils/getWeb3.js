@@ -1,37 +1,37 @@
 import Web3 from 'web3';
-import detectEthereumProvider from '@metamask/detect-provider';
 
-
-const getWeb3 = async () => {
-    const provider = await detectEthereumProvider();
-    if(provider) {
-        try{
-            const web3 = new Web3(Web3.givenProvider || 'http://localhost:8545');
-            // console.log("WEB3");
-            // console.log(web3);
+async function getWeb3() {
+    let web3;
+    try {
+        if (window.ethereum) {
+            web3 = new Web3(Web3.givenProvider);
             return web3;
-        } catch(err) {
-            // Don't think i'm properly error-handling here
-            console.error(err);
-            return false;
+        // Use Mist/MetaMask's provider.
+        } else if (window.web3) {
+            web3 = window.web3;
+            console.log('Injected web3 detected.');
+        } else {
+            console.log('Enable MetaMask');
         }
+    } catch (e) {
+        console.log(e);
     }
-    return false;
+    return web3
 }
 
-const requestAccounts = async () => {
-    const provider = await detectEthereumProvider();
-    if(!provider) return false;
-    let acctArray = await provider.request({method: 'eth_accounts'});
-    if(acctArray.length > 0) return acctArray[0];
-    try{
-        await provider.request({method: "eth_requestAccounts"});
-        acctArray = await provider.request({method: 'eth_accounts'});
-    } catch(err) {
-        console.error(err);
+async function requestAccounts() {
+    if (window.ethereum) {
+
+        try{
+            const accounts = await window.ethereum.request({
+                method: 'eth_requestAccounts'
+            });
+            return accounts[0];
+        } catch(err) {
+            console.error(err);
+        }
     }
     
-    return acctArray[0];
 }
 
 const addTokenToWallet = tokenAddr => {    

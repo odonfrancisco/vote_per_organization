@@ -82,7 +82,10 @@ export default function OrganizationDetails({ web3, accessToken }) {
     const changeName = async newName => {
         const tx = await votingContract.methods
             .changeName(newName)
-            .send({from: currentAddress})
+            .send({
+                from: currentAddress,
+                type: '0x2'
+            })
             .then(async () => {
                 /* shouldn't i be returning the new votingContract name 
                 from .then() instead of calling for methods.name()? */
@@ -147,7 +150,7 @@ export default function OrganizationDetails({ web3, accessToken }) {
         const tx = await votingContract.methods
             .createPoll(newName, options)
             .send({from: currentAddress})
-            .then(async event => {
+            .then(async () => {
                 votingContract.methods.getPolls().call({from: currentAddress})
                     .then(polls => {
                         setPolls(polls);
